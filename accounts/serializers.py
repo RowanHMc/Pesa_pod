@@ -10,7 +10,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         min_length=8,
     )
     password2 = serializers.CharField(
-        write_only=True,
+        write_only=True, # passsords cannot be included in output
         min_length=8,
     )
 
@@ -20,7 +20,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "phone_number",
-            "pasword",
+            "password",
             "password2"
         ]
 
@@ -30,3 +30,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
                 "password2": "The Passwords do not match."
             })
         return attrs
+    
+    def create(self, validated_data):
+        validated_data.pop("password2")
+        password= validated_data.pop("password")
+
+        user = User.objects.create_user(
+            password= password,
+            **validated_data,
+        )
