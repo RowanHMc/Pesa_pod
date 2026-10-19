@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'pesapod',
-    'rest_framework'
+    'accounts',
+    'rest_framework',
+    
 
 ]
 
@@ -134,3 +136,6 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+AUTH_USER_MODEL = "accounts.User"

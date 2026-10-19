@@ -7,12 +7,12 @@ class User(AbstractUser):
         max_length=50,
         blank=True,
         )
-    phone_number =models.Charfield(
-        max_lenth=15,
+    phone_number =models.CharField(
+        max_length=15,
         unique=True,
     )
     email = models.EmailField(
         unique=True
     )
     USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS =["email", "phone_number"]
+    REQUIRED_FIELDS =["email",]
