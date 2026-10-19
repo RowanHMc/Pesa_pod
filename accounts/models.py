@@ -11,6 +11,8 @@ class User(AbstractUser):
         max_length=15,
         unique=True,
     )
+    is_phone_verified = models.BooleanField(default=False)
+    
     email = models.EmailField(
         unique=True
     )
