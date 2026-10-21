@@ -11,7 +11,7 @@ class User(AbstractUser):
         )
     phone_number =models.CharField(
         max_length=15,
-        unique=True,
+        blank= False,
     )
     is_phone_verified = models.BooleanField(default=False)
 
