@@ -71,5 +71,11 @@ class RegistrationViewSet(
                 .order_by("-created_at")
                 .first()
             )
+
+            if otp is None or otp.expires_at<= timezone.now():
+                return Response(
+                    {"detail": "OTP is invalid or expired"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         
         
