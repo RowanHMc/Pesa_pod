@@ -8,6 +8,7 @@ from otp_serializers import OTPVerificationSerializer
 from .models import PhoneOTP, User
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db import transaction
 
 
 # Create your views here.
@@ -62,6 +63,13 @@ class RegistrationViewSet(
             return Response(
                 {"detail": "Phone number is already verified"},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        with transaction.atomic():
+            otp = (
+                PhoneOTP.objects.select_for_update()
+                .filter(user=user, is_used=False)
+                .order_by("-created_at")
+                .first()
             )
         
         
