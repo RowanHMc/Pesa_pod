@@ -7,6 +7,7 @@ from datetime import timedelta
 from otp_serializers import OTPVerificationSerializer
 from .models import PhoneOTP, User
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 
 # Create your views here.
@@ -57,4 +58,10 @@ class RegistrationViewSet(
                 {'detail': "invalid phone number or OTP"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if user.is_phone_verified:
+            return Response(
+                {"detail": "Phone number is already verified"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         
