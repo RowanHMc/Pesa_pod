@@ -77,5 +77,10 @@ class RegistrationViewSet(
                     {"detail": "OTP is invalid or expired"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            if otp.attempts >=5:
+                return Response(
+                    {"detail": "Too many attempts. Request New OTP"},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
         
         
