@@ -81,6 +81,14 @@ class RegistrationViewSet(
                 return Response(
                     {"detail": "Too many attempts. Request New OTP"},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
+
+                )
+            if not check_password(code, otp.code_hash):
+                otp.attempts += 1
+                otp.save(update_fields=["attempts"])
+                return Response(
+                    {"detail": "OTP is invalid or expired"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
         
         
