@@ -9,6 +9,8 @@ from .models import PhoneOTP, User
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from django.contrib.auth.hashers import make_password, check_password
+from django.utils import timezone
 
 
 # Create your views here.
@@ -90,5 +92,16 @@ class RegistrationViewSet(
                     {"detail": "OTP is invalid or expired"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        
+            otp.is_used = True
+            otp.save(update_fields=["is_used"])
+
+            user.is_phone_verified = True
+            user.save(update_fields=["is_phone_verified"])
+
+            return Response(
+                {"detail":"Phone number Verified Successfully"},
+                status=status.HTTP_200_OK,
+            )
+
+
         
