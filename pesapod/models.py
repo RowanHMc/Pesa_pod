@@ -84,4 +84,14 @@ class Membership(models.Model):
                 ),
                 name="unique_active_treasurer",
             ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    role__in=[
+                        "chairperson",
+                        "treasurer",
+                        "member",
+                    ]
+                ),
+                name = "valid_membership_role",
+            ),
         ]
