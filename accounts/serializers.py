@@ -79,3 +79,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "date_joined",
         ]
         read_only_fields=fields
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
