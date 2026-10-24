@@ -94,4 +94,14 @@ class Membership(models.Model):
                 ),
                 name = "valid_membership_role",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(is_active=True, left_at__isnull=True)
+                    | models.Q(is_active=False, left_at__isnull=False)
+                ),
+                name = "membership_departure_consistency",
+            )
         ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.chama.name} ({self.role})"
