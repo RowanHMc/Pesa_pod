@@ -19,3 +19,19 @@ class ChamaAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+
+@admin.register(Membership)
+class MembershipAdmin(admin.ModelAdmin):
+    list_display =(
+        "user",
+        "chama",
+        "role",
+        "is_active",
+        "joined_at",
+    )
+    list_filter= ("role", "is_active")
+    search_fields=(
+        "user__username",
+        "chama__name",
+    )
+    readonly_fields=("joined_at",)
