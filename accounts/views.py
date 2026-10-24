@@ -44,6 +44,7 @@ class RegistrationViewSet(
         detail = False,
         methods=["post"],
         permission_classes=[AllowAny],
+        serializer_class=OTPVerificationSerializer,
         url_path="verify-phone",
     )
     # sanitize user input
