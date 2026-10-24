@@ -11,7 +11,7 @@ class Chama(models.Model):
         editable=False,
     )
 
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150,)
     description = models.TextField(
         blank=True,
     )
@@ -108,9 +108,9 @@ class Membership(models.Model):
 
 
 class ChamaInvitation(models.Model):
-    class status(models.TextChoices):
+    class Status(models.TextChoices):
         PENDING_APPROVAL = "pending_approval", "Pending Approval"
-        AWAITING_ACCEPTANCE ="awaiting_acceptance" "Awaiting Acceptance"
+        AWAITING_ACCEPTANCE ="awaiting_acceptance", "Awaiting Acceptance"
         ACCEPTED ="accepted", "Accepted"
         REJECTED ="rejected", "Rejected"
         CANCELLED = "cancelled", "Cancelled"
@@ -141,7 +141,7 @@ class ChamaInvitation(models.Model):
     )
 
     status = models.CharField(
-        max_length=25,
+        max_length=20,
         choices=Status.choices,
         default=Status.PENDING_APPROVAL,
     )
