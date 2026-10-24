@@ -61,3 +61,19 @@ class Membership(models.Model):
         null=True,
         blank=True,
     )
+
+    class Meta: 
+        constraints = [
+            models.UniqueConstraint(
+                fields= ["chama", "user"],
+                name= "unique_chama_membership",
+            ),
+            models.UniqueConstraint(
+                fields= ["chama"],
+                condition=models.Q(
+                    role="chairperson",
+                    is_active=True,
+                ),
+                name = "unique_active_chairperson"
+            ),
+        ]
