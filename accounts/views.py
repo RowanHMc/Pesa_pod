@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .serializers import RegistrationSerializer, LoginSerializer, UserProfileSerializer, LogoutSerializer
 import secrets
@@ -59,7 +60,7 @@ class RegistrationViewSet(
         try:
             user =User.objects.get(phone_number=phone_number)
         except User.DoesNotExist:
-            return self.response(
+            return Response(
                 {'detail': "invalid phone number or OTP"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
