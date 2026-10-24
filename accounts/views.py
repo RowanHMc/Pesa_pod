@@ -166,4 +166,7 @@ class RegistrationViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return 
+        return Response(
+            {"detail": "Logged out successfully"},
+            status=status.HTTP_200_OK,
+        )
