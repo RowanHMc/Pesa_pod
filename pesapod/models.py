@@ -76,4 +76,12 @@ class Membership(models.Model):
                 ),
                 name = "unique_active_chairperson"
             ),
+            models.UniqueConstraint(
+                fields=["chama"],
+                condition=models.Q(
+                    role ="treasurer",
+                    is_active = True,
+                ),
+                name="unique_active_treasurer",
+            ),
         ]
