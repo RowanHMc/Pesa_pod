@@ -67,15 +67,15 @@ class LoginSerializer(serializers.Serializer):
             "refresh":str(refresh),
         }
 
-    class UserProfileSerializer(serializers.ModelSerializer):
-        class Meta:
-            model=User
-            fields =[
-                "id",
-                "username",
-                "email",
-                "phone_number",
-                "is_phone_verified",
-                "date_joined",
-            ]
-            read_only_fields=fields
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=User
+        fields =[
+            "id",
+            "username",
+            "email",
+            "phone_number",
+            "is_phone_verified",
+            "date_joined",
+        ]
+        read_only_fields=fields
