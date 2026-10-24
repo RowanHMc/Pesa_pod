@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.exceptions import TokenError
 from .serializers import RegistrationSerializer, LoginSerializer, UserProfileSerializer, LogoutSerializer
 import secrets
 from datetime import timedelta
@@ -144,3 +145,25 @@ class RegistrationViewSet(
         serializer_class=LogoutSerializer,
         url_path="logout",
     )
+    def logout(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.validated_data["refresh"]
+
+        try:
+            token = RefreshToken(refresh_token)
+            if str(token["user_id"]) != str(request.user.id):
+                return Response(
+                    {"detail": "Token doesnt belong to this user"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            token.blacklist()
+
+        except TokenError:
+            return Response(
+                {"detail": "Invalid or expired token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return 
