@@ -57,4 +57,12 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "Invalid username or password"
             )
-        
+        if not user.is_phone_verified:
+            raise serializers.ValidationError(
+                "Verify before log in"
+            )
+        refresh = RefreshToken.for_user(user)
+        return {
+            "access":str(refresh.access_token),
+            "refresh":str(refresh),
+        }
