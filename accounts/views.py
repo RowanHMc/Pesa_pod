@@ -126,6 +126,12 @@ class RegistrationViewSet(
         methods=["get"],
         permission_classes=[IsAuthenticated],
         serializer_class=UserProfileSerializer,
-        url_path="user",
+        url_path="users",
     )
-    
+    def users(self, request):
+        serializer = self.get_serializer(request.user)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
