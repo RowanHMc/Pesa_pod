@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import mixins, viewsets, status
-from rest_framework.permissions import AllowAny
-from .serializers import RegistrationSerializer, LoginSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .serializers import RegistrationSerializer, LoginSerializer, UserProfileSerializer
 import secrets
 from datetime import timedelta
 from .otp_serializers import OTPVerificationSerializer
@@ -118,4 +118,14 @@ class RegistrationViewSet(
         return Response(
             serializer.validated_data,
             status=status.HTTP_200_OK
-        )  
+        ) 
+
+
+    @action(
+        detail=False,
+        methods=["get"],
+        permission_classes=[IsAuthenticated],
+        serializer_class=UserProfileSerializer,
+        url_path="user",
+    )
+    
