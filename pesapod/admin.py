@@ -35,3 +35,28 @@ class MembershipAdmin(admin.ModelAdmin):
         "chama__name",
     )
     readonly_fields=("joined_at",)
+
+@admin.register(ChamaInvitation)
+class ChamaInvitationAdmin(admin.ModelAdmin):
+    list_display = (
+        "invited_user",
+        "chama",
+        "invited_by",
+        "status",
+        "created_at",
+        "expires_at",
+    )
+
+    list_filter = ("status", "created_at")
+
+    search_fields = (
+        "invited_user__username",
+        "chama__name",
+    )
+
+    readonly_fields = (
+        "id",
+        "created_at",
+        "approved_at",
+        "responded_at",
+    )
