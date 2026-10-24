@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from .serializers import RegistrationSerializer
 import secrets
 from datetime import timedelta
-from otp_serializers import OTPVerificationSerializer
+from .otp_serializers import OTPVerificationSerializer
 from .models import PhoneOTP, User
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -34,7 +34,7 @@ class RegistrationViewSet(
         PhoneOTP.objects.create(
             user=user,
             code_hash = make_password(code),
-            expires_at = timezone.now + timedelta(minutes=3),
+            expires_at = timezone.now() + timedelta(minutes=3),
         )
         """prints otp in console needs to be replaced with service provider"""
         print(f"OTP for {user.phone_number}: {code}") 
