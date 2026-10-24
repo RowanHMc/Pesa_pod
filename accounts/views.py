@@ -104,18 +104,18 @@ class RegistrationViewSet(
                 status=status.HTTP_200_OK,
             )
 
-@action(
-    detail =False,
-    methods=["post"],
-    permission_classes = [AllowAny],
-    serializer_class=LoginSerializer,
-    url_path="login",
+    @action(
+        detail =False,
+        methods=["post"],
+        permission_classes = [AllowAny],
+        serializer_class=LoginSerializer,
+        url_path="login",
     )
-def login(self, request):
-    serializer = self.get_serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+    def login(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    return Response(
-        serializer.validated_data,
-        status=status.HTTP_200_OK
-    )  
+        return Response(
+            serializer.validated_data,
+            status=status.HTTP_200_OK
+        )  
