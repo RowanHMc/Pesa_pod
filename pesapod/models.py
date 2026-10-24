@@ -105,3 +105,14 @@ class Membership(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.chama.name} ({self.role})"
+
+
+class ChamaInvitation(models.Model):
+    class status(models.TextChoices):
+        PENDING_APPROVAL = "pending_approval", "Pending Approval"
+        AWAITING_ACCEPTANCE ="awaiting_acceptance" "Awaiting Acceptance"
+        ACCEPTED ="accepted", "Accepted"
+        REJECTED ="rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
+        
