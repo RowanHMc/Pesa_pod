@@ -99,3 +99,14 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
                 "This users invitation already exists"
             )
         return attrs
+
+    @transaction.atomib
+    def create(self, validated_data):
+        validated_data.pop("username")
+
+        return ChamaInvitation.objects.create(
+            chama=self.context["chama"],
+            invited_user=self.invited_user,
+            invited_by=self.context["request"].user,
+            expires_at = timezone.now() + timedelta(days=7)
+        )
