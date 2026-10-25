@@ -15,4 +15,9 @@ class ChamaViewSet(
     serializer_class = ChamaSerializer
     permission_classes = [IsAuthenticated]
 
-    
+    def get_queryset(self):
+        return Chama.objects.filter(
+            memberships__user = self.request.user, # check if user is part of the chama
+            memberships__is_active= True, # check if they have active membership
+            is_active=True, # check if chama is active
+        ).distinct()
