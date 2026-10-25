@@ -21,3 +21,10 @@ class ChamaViewSet(
             memberships__is_active= True, # check if they have active membership
             is_active=True, # check if chama is active
         ).distinct()
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_phone_verified:
+            raise PermissionDenied(
+                "Verify your Phone Number before creating the chama."
+            )
+        serializer.save()
