@@ -4,16 +4,22 @@ from .serializers import ChamaSerializer
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
+from .permisions import IsChamaChairpersonOrReadOnly
 
 
 # Create your views here.
 class ChamaViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     serializer_class = ChamaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [
+        IsAuthenticated,
+        IsChamaChairpersonOrReadOnly,
+        ]
 
     def get_queryset(self):
         return Chama.objects.filter(
