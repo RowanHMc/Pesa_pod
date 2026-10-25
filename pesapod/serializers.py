@@ -41,3 +41,25 @@ class ChamaSerializer(serializers.ModelSerializer):
             role = Membership.Role.CHAIRPERSON,
         )
         return chama
+
+class ChamaInvitationSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(write_only=True)
+    class Meta:
+        model=  ChamaInvitation
+        fields =[
+            "id",
+            "username",
+            "invited_user",
+            "invited_by",
+            "status",
+            "created_at",
+            "expires_at",        
+        ]
+        read_only_fields = [
+            "id",
+            "invited_user",
+            "invited_by",
+            "status",
+            "created_at",
+            "expires_at",
+        ]
