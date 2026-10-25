@@ -1,4 +1,7 @@
 from django.shortcuts import render
+from django.utils import timezone
+from django.db import transaction
+
 from .models import Chama, ChamaInvitation
 from .serializers import ChamaSerializer, ChamaInvitationSerializer
 
@@ -63,3 +66,75 @@ class ChamaViewSet(
             ChamaInvitationSerializer(invitation).data,
             status=status.HTTP_201_CREATED,
         )
+
+    """Invitation status"""
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"invitations/(?P<invitation_id>[^/.]+)/review",
+    )
+    @transaction.atomic
+    def review_invitation(self, request, pk=None, invitation_id=None):
+        chama = self.get_object()
+
+        decision = request.data.get("decision")
+
+        if decision not in ("approve", "reject"):
+            return Response(
+                {"detail": "Decision must be 'approve' or 'reject'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        invitation = ChamaInvitation.objects.select_for_update().filter(
+            id=invitation_id,
+            chama=chama,
+        ).first()
+
+        if not invitation:
+            return Response(
+                {"detail": "Invitation not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if invitation.status != ChamaInvitation.Status.PENDING_APPROVAL:
+            return Response(
+                {"detail": "This invitation has already been reviewed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if invitation.expires_at <= timezone.now():
+            invitation.status = ChamaInvitation.Status.EXPIRED
+            invitation.save(update_fields=["status"])
+
+            return Response(
+                {"detail": "This invitation has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        invitation.status = (
+            ChamaInvitation.Status.AWAITING_ACCEPTANCE
+            if decision == "approve"
+            else ChamaInvitation.Status.REJECTED
+        )
+
+        if decision == "approve":
+            invitation.approved_by = request.user
+            invitation.approved_at = timezone.now()
+        else:
+            invitation.responded_at = timezone.now()
+
+        invitation.save()
+
+        return Response(
+            {
+                "id": invitation.id,
+                "status": invitation.status,
+                "detail": (
+                    "Invitation approved successfully."
+                    if decision == "approve"
+                    else "Invitation rejected successfully."
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+
