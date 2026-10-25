@@ -5,7 +5,9 @@ class IsChamaChairpersonOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
-
+        if view.action == "propose_invitation":
+            return True
+        
         return Membership.objects.filter(
             chama=obj,
             user=request.user,
