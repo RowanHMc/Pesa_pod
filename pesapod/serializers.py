@@ -87,3 +87,15 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "This user is already in this chama"
             )
+        if ChamaInvitation.objects.filter(
+            chama=chama,
+            invited_user=user,
+            status__in=[
+                ChamaInvitation.Status.PENDING_APPROVAL,
+                ChamaInvitation.Status.AWAITING_ACCEPTANCE,
+            ],
+        ).exists():
+            raise serializers.ValidationError(
+                "This users invitation already exists"
+            )
+        return attrs
