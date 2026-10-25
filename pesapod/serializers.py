@@ -63,3 +63,17 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
             "created_at",
             "expires_at",
         ]
+
+    def validate_username(self, value):
+        User = get_user_model()
+
+        try:
+            user =User.objects.get(username=value.strip())
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                "User does not exist"
+            )
+        self.invited_user = user
+        return value
+
+    a
