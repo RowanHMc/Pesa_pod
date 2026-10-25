@@ -21,4 +21,17 @@ class ChamaSerializer(serializers.ModelSerializer):
             "is_active",
         ]
 
-        
+        @transaction.atomic
+        def create(self, validated_data):
+            user = self.context["request"].user
+            chama =Chama.objects.create(
+                created_by = user,
+                **validated_data,
+            )
+
+            Membership.objects.create(
+                chama = chama,
+                user = user,
+                role = Membership.Role.CHAIRPERSON,
+            )
+            return chama
