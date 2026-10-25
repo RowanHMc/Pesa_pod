@@ -76,4 +76,14 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
         self.invited_user = user
         return value
 
-    a
+    def validate(self, attrs):
+        chama = self.comtect["chama"]
+        user = self.invited_user
+
+        if Membership.objects.filter(
+            chama=chama,
+            user=user,
+        ).exists():
+            raise serializers.ValidationError(
+                "This user is already in this chama"
+            )
