@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'africastalking',
     
 
 ]
@@ -94,6 +95,10 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
 }
+
+# Aficas Talking
+AT_USERNAME = config("AT_USERNAME")
+AT_API_KEY = config("AT_API_KEY")
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
