@@ -100,7 +100,7 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-    @transaction.atomib
+    @transaction.atomic
     def create(self, validated_data):
         validated_data.pop("username")
 
