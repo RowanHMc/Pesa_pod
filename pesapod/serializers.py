@@ -48,6 +48,7 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
         model=  ChamaInvitation
         fields =[
             "id",
+            "chama",
             "username",
             "invited_user",
             "invited_by",
@@ -57,6 +58,7 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "chama",
             "invited_user",
             "invited_by",
             "status",
@@ -77,7 +79,7 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        chama = self.comtect["chama"]
+        chama = self.context["chama"]
         user = self.invited_user
 
         if Membership.objects.filter(
@@ -87,6 +89,17 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "This user is already in this chama"
             )
+
+        ChamaInvitation.objects.filter(
+            chama=chama,
+            invited_user=user,
+            status__in = [
+                ChamaInvitation.Status.PENDING_APPROVAL,
+                ChamaInvitation.Status.AWAITING_ACCEPTANCE,
+            ],
+            expires_at__lte = timezone.now(),
+        ).update(status=ChamaInvitation.Status.EXPIRED)
+
         if ChamaInvitation.objects.filter(
             chama=chama,
             invited_user=user,

@@ -147,7 +147,10 @@ class ChamaViewSet(
             status=status.HTTP_200_OK,
         )
 
-class InvitationViewSet(viewsets.GenericViewSet):
+class InvitationViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class=ChamaInvitationSerializer
     permission_classes = [IsAuthenticated]
 
