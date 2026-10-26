@@ -123,3 +123,19 @@ class ChamaInvitationSerializer(serializers.ModelSerializer):
             invited_by=self.context["request"].user,
             expires_at = timezone.now() + timedelta(days=7)
         )
+
+class MembershipSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        source="user.username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Membership
+        fields = [
+            "id",
+            "username",
+            "role",
+            "joined_at",
+        ]
+        read_only_fields =fields
