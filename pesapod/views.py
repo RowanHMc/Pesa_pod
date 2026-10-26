@@ -1,18 +1,20 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, IntegrityError
 
-from .models import Chama, ChamaInvitation
+from .models import Chama, ChamaInvitation, Membership
 from .serializers import ChamaSerializer, ChamaInvitationSerializer
 
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 
 from .permisions import IsChamaChairpersonOrReadOnly
+
+from uuid import UUID
 
 
 
@@ -84,7 +86,14 @@ class ChamaViewSet(
                 {"detail": "Decision must be 'approve' or 'reject'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        try:
+            invitation_id= UUID(invitation_id)
+        except(ValueError, TypeError):
+            return Response(
+                {"detail": "Invalid Invitation id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         invitation = ChamaInvitation.objects.select_for_update().filter(
             id=invitation_id,
             chama=chama,
@@ -137,4 +146,70 @@ class ChamaViewSet(
             },
             status=status.HTTP_200_OK,
         )
+
+class InvitationViewSet(viewsets.GenericViewSet):
+    serializer_class=ChamaInvitationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ChamaInvitation.objects.filter(
+            invited_user =self.request.user,
+        )
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def respond(self, request, pk=None):
+        invitation = get_object_or_404(
+            self.get_queryset().select_for_update(),
+            pk=pk,
+        )
+
+        decision = request.data.get("decision")
+        if decision not in("accept", "decline"):
+            raise ValidationError(
+                {"detail": "Choose accept or decline"}
+            )
+        if invitation.status != ChamaInvitation.Status.AWAITING_ACCEPTANCE:
+            raise ValidationError(
+                "Invitation is not awaiting acceptance"
+            )
+        if invitation.expires_at <= timezone.now():
+            invitation.status = ChamaInvitation.Status.EXPIRED
+            invitation.save(update_fields= ["status"])
+            return Response(
+                {"detail":"Invitation Expired"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not invitation.chama.is_active:
+            raise ValidationError(
+                "Chama is inactive"
+            )
+        if decision == "accept":
+            if Membership.objects.filter(
+                chama = invitation.chama,
+                user=request.user,
+            ).exists():
+                raise ValidationError(
+                    "You are already in this chama "
+                )
+            Membership.objects.create(
+                chama =invitation.chama,
+                user = request.user,
+                role=Membership.Role.MEMBER,
+            )
+
+        invitation.status = (
+            ChamaInvitation.Status.ACCEPTED
+            if decision == "accept"
+            else ChamaInvitation.Status.REJECTED
+        )
+        invitation.responded_at = timezone.now()
+        invitation.save(update_fields=["status", "responded_at"])
+
+        return Response(
+            {
+                "status": invitation.status,
+                "detail": f"Invitation {invitation.status} Successfully"
+            }
+        )
+
 
