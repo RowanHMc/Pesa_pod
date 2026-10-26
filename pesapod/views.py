@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError
 
 from .models import Chama, ChamaInvitation, Membership
-from .serializers import ChamaSerializer, ChamaInvitationSerializer
+from .serializers import ChamaSerializer, ChamaInvitationSerializer, MembershipSerializer
 
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -146,6 +146,18 @@ class ChamaViewSet(
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=["get"], url_path="members")
+    def list_members(self, request, pk=None):
+        chama =self.get_object()
+
+        members =Membership.objects.filter(
+            chama = chama,
+            is_active=True,
+        ).select_related("user").order_by("joined_at")
+        serializer =MembershipSerializer(members, many=True)
+        return Response(serializer.data)
+
 
 class InvitationViewSet(
     mixins.ListModelMixin,
