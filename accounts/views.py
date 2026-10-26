@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from django.db import transaction
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
-
+from .services.sms import send_otp_sms
 
 # Create your views here.
 class RegistrationViewSet(
@@ -38,8 +38,8 @@ class RegistrationViewSet(
             code_hash = make_password(code),
             expires_at = timezone.now() + timedelta(minutes=3),
         )
-        """prints otp in console needs to be replaced with service provider"""
-        print(f"OTP for {user.phone_number}: {code}") 
+        """ service provider"""
+        send_otp_sms(user.phone_number, code)
 
 # create custom url for unauyhenticated
     @action(
