@@ -158,53 +158,53 @@ class ChamaViewSet(
         serializer =MembershipSerializer(members, many=True)
         return Response(serializer.data)
 
-    
-@action(detail=True, methods=["post"], url_path="appoint-treasurer")
-@transaction.atomic
-def appoint_treasurer(self, request, pk=None):
-    chama = self.get_object()
 
-    # Lock the chama to prevent simultaneous appointments
-    Chama.objects.select_for_update().get(pk=chama.pk)
+    @action(detail=True, methods=["post"], url_path="appoint-treasurer")
+    @transaction.atomic
+    def appoint_treasurer(self, request, pk=None):
+        chama = self.get_object()
 
-    member_id = request.data.get("member_id")
+    # prevent simultaneous appointments
+        Chama.objects.select_for_update().get(pk=chama.pk)
 
-    member = Membership.objects.filter(
-        id=member_id,
-        chama=chama,
-        is_active=True,
-    ).first() if str(member_id).isdigit() else None
+        member_id = request.data.get("member_id")
 
-    if not member:
-        raise ValidationError("Active member not found.")
+        member = Membership.objects.filter(
+            id=member_id,
+            chama=chama,
+            is_active=True,
+        ).first() if str(member_id).isdigit() else None
 
-    if member.role == Membership.Role.CHAIRPERSON:
-        raise ValidationError(
-            "The Chairperson cannot be appointed Treasurer."
-        )
+        if not member:
+            raise ValidationError("Active member not found.")
 
-    if member.role == Membership.Role.TREASURER:
-        raise ValidationError(
-            "This member is already the Treasurer."
-        )
+        if member.role == Membership.Role.CHAIRPERSON:
+            raise ValidationError(
+                "The Chairperson cannot be appointed Treasurer."
+            )
+
+        if member.role == Membership.Role.TREASURER:
+            raise ValidationError(
+                "This member is already the Treasurer."
+            )
 
     # Remove current Treasurer, if any
-    Membership.objects.filter(
-        chama=chama,
-        role=Membership.Role.TREASURER,
-        is_active=True,
-    ).update(role=Membership.Role.MEMBER)
+        Membership.objects.filter(
+            chama=chama,
+            role=Membership.Role.TREASURER,
+            is_active=True,
+        ).update(role=Membership.Role.MEMBER)
 
     # Appoint the selected member
-    member.role = Membership.Role.TREASURER
-    member.save(update_fields=["role"])
+        member.role = Membership.Role.TREASURER
+        member.save(update_fields=["role"])
 
-    return Response({
-        "detail": "Treasurer appointed successfully.",
-        "member_id": member.id,
-        "username": member.user.username,
-        "role": member.role,
-    })
+        return Response({
+            "detail": "Treasurer appointed successfully.",
+            "member_id": member.id,
+            "username": member.user.username,
+            "role": member.role,
+        })
 
 
 
