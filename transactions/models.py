@@ -45,7 +45,7 @@ class SavingsCycle(models.Model):
     )
     start_date = models.DateField()
 
-    status = models.DateField(
+    status = models.CharField(
         max_length=15,
         choices=Status.choices,
         default=Status.DRAFT,
@@ -54,7 +54,7 @@ class SavingsCycle(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name="created_saings_cycles",
+        related_name="created_savings_cycles",
     )
 
     created_at = models.DateTimeField(
@@ -73,4 +73,4 @@ class SavingsCycle(models.Model):
             ),
         ]
     def __str__(self):
-        return f"{self.name} - {self.frequency} ([self.status])"
+        return f"{self.chama.name} - {self.frequency} ([self.status])"
