@@ -55,7 +55,7 @@ class SavingsCycleViewSet(
                 SavingsCycle.Status.DRAFT,
                 SavingsCycle.Status.ACTIVE,
             ],
-        ).exISTS():
+        ).exists():
             raise ValidationError(
                 "Chama already has an unfinished cycle"
             )
