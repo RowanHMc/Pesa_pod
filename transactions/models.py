@@ -38,7 +38,11 @@ class SavingsCycle(models.Model):
             MinValueValidator(Decimal("0.01"))
         ],
     )
+    number_of_rounds = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
 
+    )
     frequency = models.CharField(
         max_length=10,
         choices=Frequency.choices,
@@ -71,6 +75,11 @@ class SavingsCycle(models.Model):
                 condition=Q(contribution_amount__gt=0),
                 name ="positive_cycle_contribution",
             ),
+            models.CheckConstraint(
+                condition=Q(number_of_rounds__gte=0),
+                name ="positive_number_of_rounds",
+            ),
+
         ]
     def __str__(self):
         return f"{self.chama.name} - {self.frequency} ([self.status])"

@@ -11,6 +11,7 @@ class SavingsCycleSerializer(serializers.ModelSerializer):
             "contribution_amount",
             "frequency",
             "start_date",
+            "number_of_rounds"
             "status",
             "created_by",
             "created_at",
