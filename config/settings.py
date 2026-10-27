@@ -48,8 +48,7 @@ INSTALLED_APPS = [
     'africastalking',
 
     'transactions',
-    'gunicorn'
-    'whitenoise',
+   
     
 
 ]
