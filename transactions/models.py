@@ -174,3 +174,55 @@ class Contribution(models.Model):
 
     def __str__(self):
         return f"{self.membership.user.username} - Round {self.round.round_number}"
+
+
+class Transaction(models.Model):
+    class Method(models.TextChoices):
+        MPESA = "mpesa", "M-Pesa"
+        CASH = "cash", "Cash"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        CONFIRMED = "confirmed", "Confirmed"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    contribution = models.ForeignKey(
+        Contribution,
+        on_delete=models.PROTECT,
+        related_name="transactions",
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    method = models.CharField(
+        max_length=10,
+        choices=Method.choices,
+    )
+    reference = models.CharField(
+        max_length=100,
+        unique=True,
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0),
+                name="positive_transaction_amount",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.reference} - {self.amount} ({self.status})"
+
