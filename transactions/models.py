@@ -126,3 +126,51 @@ class SavingsRound(models.Model):
 
     def __str__(self):
         return f"{self.cycle.chama.name} - Round {self.round_number}"
+
+
+class Contribution(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending","Pending"
+        PAID = "paid", "Paid"
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    round = models.ForeignKey(
+        SavingsRound,
+        on_delete=models.PROTECT,
+        related_name="contributions",
+    )
+    membership = models.ForeignKey(
+        "pesapod.Membership",
+        on_delete=models.PROTECT,
+        related_name="contributions",
+    )
+    amount_due = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["round", "membership"],
+                name="unique_round_membership_contribution",
+            ),
+            models.CheckConstraint(
+                condition=Q(amount_due__gt=0),
+                name="positive_contribution_amount",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.membership.user.username} - Round {self.round.round_number}"
