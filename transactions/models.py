@@ -75,7 +75,7 @@ class SavingsCycle(models.Model):
     def __str__(self):
         return f"{self.chama.name} - {self.frequency} ([self.status])"
 
-class SavinngsRound(models.Model):
+class SavingsRound(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         ACTIVE = "active", "Active"
