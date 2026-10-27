@@ -12,6 +12,7 @@ from .models import SavingsCycle, SavingsRound, Contribution
 from .serializers import SavingsCycleSerializer, SavingsRoundSerializer
 
 import calendar
+import secrets
 
 from datetime import timedelta
 
@@ -49,7 +50,7 @@ class SavingsCycleViewSet(
 
         if not is_chairperson:
             raise PermissionDenied(
-                "Only chairperson can create a sacing cycle"
+                "Only chairperson can create a saving cycle"
             )
         if not chama.is_active:
             raise ValidationError(
@@ -90,52 +91,31 @@ class SavingsCycleViewSet(
             raise PermissionDenied(
                 "Only the Chairperson can generate rounds."
                 )
-        # if cycle.status != SavingsCycle.Status.DRAFT:
-        #     raise ValidationError("The cycle must be in draft status.")
-        if cycle.status not in [
-            SavingsCycle.Status.DRAFT,
-            SavingsCycle.Status.ACTIVE,
-        ]:
-            raise ValidationError("This cycle cannot create Rounds.")
-
+        if cycle.status != SavingsCycle.Status.ACTIVE:
+            raise ValidationError("The savings cycle must be active.")
+       
         previous_round = cycle.rounds.order_by("-round_number").first()
-        next_number =(
-            previous_round.round_number + 1
-            if previous_round else 1
-        )
+
+        if not previous_round:
+            raise ValidationError("The first round has not been created")
+        if previous_round.status != SavingsRound.Status.COMPLETED:
+            raise ValidationError("complete the previous round first")
+       
+        next_number = previous_round.round_number + 1
 
         if next_number > cycle.number_of_rounds:
             raise ValidationError(
                 "The cycle has reached its maximin rounds"
             )
-        if previous_round and previous_round.status != SavingsRound.Status.COMPLETED:
-            raise ValidationError("Complete previous round before creating another")
         
-        # if cycle.rounds.exists():
-        #     raise ValidationError("Rounds have already been generated.")
 
-        # payout_order = request.data.get("payout_order")
+        payout_order = cycle.payout_order
 
-        # if not isinstance(payout_order, list) or not all(
-        #     type(member_id) is int for member_id in payout_order
-        # ):
-        #     raise ValidationError(
-        #         "payout_order must be a list of membership IDs."
-        #     )
+        if not payout_order:
+            raise ValidationError("Payout order is missing.")
 
-        member_id = request.data.get("recipient")
-
-        if isinstance(member_id, bool) or not str(member_id).isdigit():
-            raise ValidationError("Have Valid Membership ID")
-
-        recipient = Membership.objects.filter(
-            id = member_id,
-            chama =cycle.chama,
-            is_active =True,
-        ).first()
-
-        if not recipient:
-            raise ValidationError("Recipient must be an active Member")
+        recipient_index = (next_number - 1) % len(payout_order)
+        recipient_id = payout_order[recipient_index]
 
         if cycle.frequency == SavingsCycle.Frequency.WEEKLY:
             due_date = cycle.start_date + timedelta(
@@ -154,52 +134,27 @@ class SavingsCycleViewSet(
             )
         
 
-        # member_ids = set(Membership.objects.filter(
-        #     chama=cycle.chama,
-        #     is_active=True,
-        # ).values_list("id", flat=True))
-
-        # if len(member_ids) < 2:
-        #     raise ValidationError("A cycle requires at least two members.")
-
-        # if len(payout_order) != len(member_ids) or set(payout_order) != member_ids:
-        #     raise ValidationError(
-        #         "Provide every active member exactly once."
-        #     )
-
         round_ = SavingsRound.objects.create(
             cycle=cycle,
             round_number = next_number,
-            recipient =recipient,
+            recipient_id =recipient_id,
             due_date =due_date,
         )
-        # rounds = []
-
-        # for index, member_id in enumerate(payout_order):
-        #     if cycle.frequency == SavingsCycle.Frequency.WEEKLY:
-        #         due_date = cycle.start_date + timedelta(weeks=index)
-
-        #     else:
-        #         month_index = cycle.start_date.month - 1 + index
-        #         year = cycle.start_date.year + month_index // 12
-        #         month = month_index % 12 + 1
-        #         day = min(
-        #             cycle.start_date.day,
-        #             calendar.monthrange(year, month)[1],
-        #         )
-        #         due_date = cycle.start_date.replace(
-        #             year=year, month=month, day=day
-        #         )
-
-        #     rounds.append(SavingsRound(
-        #         cycle=cycle,
-        #         round_number=index + 1,
-        #         recipient_id=member_id,
-        #         due_date=due_date,
-        #     ))
-
-        # SavingsRound.objects.bulk_create(rounds)
-
+       
+        members = Membership.objects.filter(
+        chama=cycle.chama,
+        id__in=payout_order,
+        )
+        
+        Contribution.objects.bulk_create([
+        Contribution(
+            round=round_,
+            membership=member,
+            amount_due=cycle.contribution_amount,
+        )
+        for member in members
+        ])
+        
         return Response(
             SavingsRoundSerializer(round_).data,
             status=status.HTTP_201_CREATED,
@@ -226,8 +181,9 @@ class SavingsCycleViewSet(
             )
 
         if cycle.status != SavingsCycle.Status.DRAFT:
-            raise ValidationError("Cycle must be in draft status.")
-
+            raise ValidationError("Cycle must be in draft status to be activated.")
+        if cycle.rounds.exists():
+            raise ValidationError("This cycle has rounds use a new draft cycle")
         if SavingsCycle.objects.filter(
             chama=cycle.chama,
             status=SavingsCycle.Status.ACTIVE,
@@ -237,51 +193,45 @@ class SavingsCycleViewSet(
         members = list(Membership.objects.filter(
             chama=cycle.chama,
             is_active=True,
-        ))
+        ).order_by("id"))
 
-        rounds = list(cycle.rounds.order_by("round_number"))
-
-        member_ids = {member.id for member in members}
-        recipient_ids = {round_.recipient_id for round_ in rounds}
-
+ 
         if len(members) < 2:
             raise ValidationError("At least two members are required.")
-
-        if (
-            len(rounds) != len(members)
-            or recipient_ids != member_ids
-            or [r.round_number for r in rounds]
-            != list(range(1, len(rounds) + 1))
-        ):
+        if cycle.number_of_rounds < 1:
             raise ValidationError(
-                "Rounds must cover every active member exactly once."
-            )
+                "A savings cycle must have at least one round."
+                )
+        payout_order = [member.id for member in members]
+        secrets.SystemRandom().shuffle(payout_order)
 
-        if Contribution.objects.filter(round__cycle=cycle).exists():
-            raise ValidationError(
-                "Contributions have already been generated."
-            )
-
-        contributions = [
-            Contribution(
-                round=round_,
-                membership=member,
-                amount_due=cycle.contribution_amount,
-            )
-            for round_ in rounds
-            for member in members
-        ]
-
-        Contribution.objects.bulk_create(contributions)
-
+        cycle.payout_order = payout_order
         cycle.status = SavingsCycle.Status.ACTIVE
-        cycle.save(update_fields=["status"])
+        cycle.save(update_fields=["payout_order", "status"])
+
+        first_round = SavingsRound.objects.create(
+            cycle = cycle,
+            round_number = 1,
+            recipient_id = payout_order[0],
+            due_date=cycle.start_date,
+        )
+
+        Contribution.objects.bulk_create([
+            Contribution(
+                round=first_round,
+                membership = member,
+                amount_due = cycle.contribution_amount,
+            )
+            for member in members
+        ])
 
         return Response({
             "detail": "Savings cycle activated successfully.",
             "status": cycle.status,
-            "rounds": len(rounds),
-            "contributions_created": len(contributions),
+            "payout_order": payout_order,
+            "current_round": 1,
+            "recipient": payout_order[0],
+            "contributions_created": len(members),
         })
 
 

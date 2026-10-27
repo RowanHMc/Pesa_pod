@@ -54,6 +54,11 @@ class SavingsCycle(models.Model):
         choices=Status.choices,
         default=Status.DRAFT,
     )
+    payout_order = models.JSONField(
+        default=list,
+        blank=True,
+        editable=False,
+    )
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
