@@ -74,3 +74,55 @@ class SavingsCycle(models.Model):
         ]
     def __str__(self):
         return f"{self.chama.name} - {self.frequency} ([self.status])"
+
+class SavinngsRound(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACTIVE = "active", "Active"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    cycle = models.ForeignKey(
+        SavingsCycle,
+        on_delete=models.PROTECT,
+        related_name="rounds",
+    )
+    round_number = models.PositiveIntegerField()
+
+    recipient = models.ForeignKey(
+        "pesapod.MEmbership",
+        on_delete=models.PROTECT,
+        related_name="payout_rounds",
+    )
+
+    due_date = models.DateField()
+
+    status = models.DateField(
+        max_length=15,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cycle","round_number"],
+                name= "unique_cycle_round_number",
+            ),
+            models.CheckConstraint(
+                condition=Q(round_number__gte=1),
+                name="positive_round_number",
+            ),
+        ]
+        ordering = ["round_number"]
+
+    def __str__(self):
+        return f"{self.cycle.chama.name} - Round {self.round_number}"
