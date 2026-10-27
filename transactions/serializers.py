@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SavingsCycle
+from .models import SavingsCycle, SavingsRound
 
 
 class SavingsCycleSerializer(serializers.ModelSerializer):
@@ -22,3 +22,22 @@ class SavingsCycleSerializer(serializers.ModelSerializer):
             "created_by",
             "created_at",
         ]
+
+class SavingsRoundSerializer(serializers.ModelSerializer):
+    recipient_username = serializers.CharField(
+        source="recipient.user.username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = SavingsRound
+        fields = [
+            "id",
+            "cycle",
+            "round_number",
+            "recipient",
+            "recipient_username",
+            "due_date",
+            "status",
+        ]
+        read_only_fields = fields
