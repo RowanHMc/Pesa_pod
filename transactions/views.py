@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from pesapod.models import Membership, Chama
 from .models import SavingsCycle, SavingsRound
-from .serializers import SavingsCycleSerializer
+from .serializers import SavingsCycleSerializer, SavingsRoundSerializer
 
 import calendar
 

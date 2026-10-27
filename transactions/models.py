@@ -102,7 +102,7 @@ class SavingsRound(models.Model):
 
     due_date = models.DateField()
 
-    status = models.DateField(
+    status = models.CharField(
         max_length=15,
         choices=Status.choices,
         default=Status.PENDING,
