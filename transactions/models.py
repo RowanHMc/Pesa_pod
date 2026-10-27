@@ -179,6 +179,7 @@ class Contribution(models.Model):
 class Transaction(models.Model):
     class Method(models.TextChoices):
         MPESA = "mpesa", "M-Pesa"
+        BANK = "bank", "Bank Transfer"
         CASH = "cash", "Cash"
 
     class Status(models.TextChoices):
