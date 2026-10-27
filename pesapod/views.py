@@ -16,6 +16,8 @@ from .permisions import IsChamaChairpersonOrReadOnly
 
 from uuid import UUID
 
+from transactions.models import SavingsCycle
+
 
 
 # Create your views here.
@@ -254,6 +256,13 @@ class InvitationViewSet(
             ).exists():
                 raise ValidationError(
                     "You are already in this chama "
+                )
+            if SavingsCycle.objects.filter(
+                chama = invitation.chama,
+                status=SavingsCycle.Status.ACTIVE,
+            ).exists():
+                raise ValidationError(
+                    "You cannot join when there is an active cycle."
                 )
             Membership.objects.create(
                 chama =invitation.chama,
