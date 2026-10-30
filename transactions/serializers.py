@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SavingsCycle, SavingsRound
+from .models import SavingsCycle, SavingsRound, Contribution, Transaction
 
 
 class SavingsCycleSerializer(serializers.ModelSerializer):
@@ -42,3 +42,42 @@ class SavingsRoundSerializer(serializers.ModelSerializer):
             "status",
         ]
         read_only_fields = fields
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = [
+            "id",
+            "contribution",
+            "reported_by",
+            "reviewed_by",
+            "amount",
+            "method",
+            "reference",
+            "status",
+            "rejection_reason",
+            "created_at",
+            "reviewed_at",
+        ]
+        read_only_fields = [
+            "id",
+            "reported_by",
+            "reviewed_by",
+            "status",
+            "rejection_reason",
+            "created_at",
+            "reviewed_at",
+        ]
+
+    def validate(self, attrs):
+        contribution = attrs["contribution"]
+        amount = attrs["amount"]
+
+        if amount != contribution.amount_due:
+            raise serializers.ValidationError({
+                "amount": "The reported payment must equal the full contribution amount."
+            })
+
+        return attrs
+
+        
