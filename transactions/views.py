@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 
 from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import IsAuthenticated
@@ -8,8 +10,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from pesapod.models import Membership, Chama
-from .models import SavingsCycle, SavingsRound, Contribution
-from .serializers import SavingsCycleSerializer, SavingsRoundSerializer
+from .models import SavingsCycle, SavingsRound, Contribution, Transaction
+from .serializers import SavingsCycleSerializer, SavingsRoundSerializer, ContributionSerializer, TransactionSerializer, TransactionRejectionSerializer
 
 import calendar
 import secrets
@@ -233,6 +235,23 @@ class SavingsCycleViewSet(
             "recipient": payout_order[0],
             "contributions_created": len(members),
         })
+
+class ContributionViewSet(
+        mixins.ListModelMixin,
+        mixins.RetrieveModelMixin,
+        viewsets.GenericViewSet,
+):
+    serializer_class = ContributionSerializer
+    permission_classes =[IsAuthenticated]
+
+    def get_queryset(self):
+        return Contribution.objects.filter(
+            membership__user = self.request.user,
+        ).select_related(
+            "membership",
+            "round",
+            "round__cycle"
+        )
 
 
 

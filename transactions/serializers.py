@@ -43,6 +43,19 @@ class SavingsRoundSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+class ContributionSerializer(serializers.Serializer):
+    class Meta:
+        model = Contribution
+        fields = [
+            "id",
+            "round",
+            "membership",
+            "amount_due",
+            "status",
+            "created_at",
+        ]
+        read_only_fields = fields
+
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
