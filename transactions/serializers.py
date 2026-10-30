@@ -80,4 +80,8 @@ class TransactionSerializer(serializers.ModelSerializer):
 
         return attrs
 
-        
+class TransactionRejectionSerializer(serializers.Serializer):
+    rejection_reason = serializers.CharField(
+        max_length=200,
+        allow_blank=False,
+    )
