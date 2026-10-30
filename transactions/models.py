@@ -81,13 +81,13 @@ class SavingsCycle(models.Model):
                 name ="positive_cycle_contribution",
             ),
             models.CheckConstraint(
-                condition=Q(number_of_rounds__gte=0),
+                condition=Q(number_of_rounds__gte=1),
                 name ="positive_number_of_rounds",
             ),
 
         ]
     def __str__(self):
-        return f"{self.chama.name} - {self.frequency} ([self.status])"
+        return f"{self.chama.name} - {self.frequency} ({self.status})"
 
 class SavingsRound(models.Model):
     class Status(models.TextChoices):
@@ -109,7 +109,7 @@ class SavingsRound(models.Model):
     round_number = models.PositiveIntegerField()
 
     recipient = models.ForeignKey(
-        "pesapod.MEmbership",
+        "pesapod.Membership",
         on_delete=models.PROTECT,
         related_name="payout_rounds",
     )
@@ -199,7 +199,7 @@ class Transaction(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         CONFIRMED = "confirmed", "Confirmed"
-        FAILED = "failed", "Failed"
+        REJECTED = "rejected", "rejected"
 
     id = models.UUIDField(
         primary_key=True,
@@ -210,6 +210,18 @@ class Transaction(models.Model):
         Contribution,
         on_delete=models.PROTECT,
         related_name="transactions",
+    )
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="reported_transactions",
+    )
+    reviewed_by =models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name= "reviewed_transactions",
+        null=True,
+        blank= True,
     )
     amount = models.DecimalField(
         max_digits=12,
@@ -229,13 +241,43 @@ class Transaction(models.Model):
         choices=Status.choices,
         default=Status.PENDING,
     )
+    rejection_reason = models.CharField(
+        max_length=200,
+        blank=True,
+        default= "",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at= models.DateTimeField(
+        null=True,
+        blank=True,
+    )
     class Meta:
         constraints = [
             models.CheckConstraint(
                 condition=Q(amount__gt=0),
                 name="positive_transaction_amount",
             ),
+            models.UniqueConstraint(
+                fields=["contribution"],
+                condition=Q(status__in=["pending","confirmed"]),
+                name = "one_active_transaction_per_contribution",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        status = "pending",
+                        reviewed_by__isnull = True,
+                        reviewed_at__isnull=True,
+                    )
+                    | 
+                    Q(
+                        status__in=["confirmed", "rejected"],
+                        reviewed_by__isnull=False,
+                        reviewed_at__isnull=False,
+                    )
+                ),
+                name = "transaction_review_audit_consistency",
+            )
         ]
 
     def __str__(self):

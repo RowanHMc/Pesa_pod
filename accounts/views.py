@@ -41,7 +41,7 @@ class RegistrationViewSet(
         """ service provider"""
         send_otp_sms(user.phone_number, code)
 
-# create custom url for unauyhenticated
+# create custom url for unauthenticated
     @action(
         detail = False,
         methods=["post"],

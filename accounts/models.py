@@ -22,7 +22,7 @@ class User(AbstractUser):
     REQUIRED_FIELDS =["email","phone_number",]
 
 
-# OTP 
+# OTP
 class PhoneOTP(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
