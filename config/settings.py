@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+# import os
+# from dotenv import load_dotenv
+
+# load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    'africastalking',
+    # 'africastalking',
 
     'transactions',
    
@@ -54,7 +58,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -91,6 +94,28 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "2000/hour",
+        # per IP address
+        "register": "5/hour",
+        "verify_email": "10/min",
+        "resend_verification": "10/hour",
+        "login": "10/min",
+        "password_reset_request": "5/hour",
+        "password_reset_confirm": "10/min",
+        "password_change": "5/hour",
+        # per targeted email / username 
+        "email_cooldown": "1/min",
+        "email_daily": "10/day",
+        "email_confirm": "20/hour",
+        "login_username": "10/hour",
+    },
+
 }
 
 SIMPLE_JWT = {
@@ -98,12 +123,12 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    'UPDATE_LAST_LOGIN': False,
 }
 
 # Aficas Talking
-AT_USERNAME = config("AT_USERNAME")
-AT_API_KEY = config("AT_API_KEY")
+# AT_USERNAME = config("AT_USERNAME")
+# AT_API_KEY = config("AT_API_KEY")
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
@@ -160,12 +185,36 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+DEFAULT_FROM_EMAIL = f"Pesapod <{config('EMAIL_HOST_USER', default='no-reply@pesapod.example')}>"
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
+)
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+# DEFAULT_FROM_EMAIL = f"Pesapod <{config('EMAIL_HOST_USER', default='no-reply@pesapod.gmail.com')}>"
+# if DEBUG:
+#     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# else:
+#     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+#     EMAIL_HOST = os.environ["EMAIL_HOST"]
+#     EMAIL_PORT = 587
+#     EMAIL_USE_TLS = True
+#     EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+#     EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# MAILERS = {
+#     'default': {
+#         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+#     },
+# }
 
 
 AUTH_USER_MODEL = "accounts.User"

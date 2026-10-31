@@ -7,9 +7,13 @@ djangorestframework==3.18.3
 djangorestframework_simplejwt==5.5.1
 gunicorn==26.2.0
 idna==3.20
+phonenumbers==9.0.42
+psycopg==3.3.6
+psycopg-binary==3.3.6
 psycopg2-binary==2.9.13
 PyJWT==2.15.1
 python-decouple==3.8
+python-dotenv==1.2.4
 PyYAML==6.0.3
 requests==2.34.2
 responses==0.26.3

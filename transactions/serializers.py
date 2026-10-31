@@ -43,12 +43,22 @@ class SavingsRoundSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-class ContributionSerializer(serializers.Serializer):
+class ContributionSerializer(serializers.ModelSerializer):
+    chama_name = serializers.CharField(
+        source = "round.cycle.chama.name",
+        read_only = True,
+    )
+    round_number = serializers.IntegerField(
+        source=  "round.round_number",
+        read_only = True,
+    )
     class Meta:
         model = Contribution
         fields = [
             "id",
+            "chama_name",
             "round",
+            "round_number",
             "membership",
             "amount_due",
             "status",
@@ -57,13 +67,34 @@ class ContributionSerializer(serializers.Serializer):
         read_only_fields = fields
 
 class TransactionSerializer(serializers.ModelSerializer):
+    reported_by_username = serializers.CharField(
+        source = "reported_by.username",
+        read_only = True,
+    )
+    reviewed_by_username = serializers.CharField(
+        source = "reviewed_by.username",
+        read_only = True,
+        allow_null = True,
+    )
+    chama_name = serializers.CharField(
+        source = "contribution.round.cycle.chama.name",
+        read_only = True,
+    )
+    round_number = serializers.IntegerField(
+        source ="contribution.round.round_number",
+        read_only = True,
+    )
     class Meta:
         model = Transaction
         fields = [
             "id",
             "contribution",
+            "chama_name",
+            "round_number",
             "reported_by",
+            "reported_by_username",
             "reviewed_by",
+            "reviewed_by_username",
             "amount",
             "method",
             "reference",
@@ -75,7 +106,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "reported_by",
+            "reported_by_username",
             "reviewed_by",
+            "reviewed_by_username",
+            "chama_name",
+            "round_number",
             "status",
             "rejection_reason",
             "created_at",
