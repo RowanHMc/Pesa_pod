@@ -98,6 +98,9 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
+
+    "EXCEPTION_HANDLER": "config.exceptions.api_exception_handler",
+
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "2000/hour",
@@ -114,6 +117,8 @@ REST_FRAMEWORK = {
         "email_daily": "10/day",
         "email_confirm": "20/hour",
         "login_username": "10/hour",
+
+        "invitation_propose": "30/hour",
     },
 
 }
