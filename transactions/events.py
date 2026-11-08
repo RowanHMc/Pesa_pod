@@ -1,9 +1,4 @@
-# after nots
-"""What each action in the savings flow tells whom. services.py calls these
-inside its transactions, so a notification exists exactly when its event does.
-
-Titles are short and carry no amounts or names, because the email shows only
-the title. Bodies (shown in the app) have the details."""
+"""services.py calls these inside its transactions, so a notification exists exactly when its event does."""
 from notifications.models import Notification
 from notifications.services import notify
 from pesapod.models import Membership
@@ -38,9 +33,7 @@ def _ids(chama, cycle=None, round_=None, contribution=None, payment=None, payout
     return ids
 
 
-# --- cycle -------------------------------------------------------------------
-
-
+# cycle 
 def cycle_activated(cycle, chama, first_round):
     notify(
         chama_users(chama.pk),
@@ -79,9 +72,7 @@ def cycle_cancelled(cycle, chama, actor, reason):
     )
 
 
-# --- rounds ------------------------------------------------------------------
-
-
+# rounds 
 def round_opened(round_, cycle, chama):
     notify(
         chama_users(chama.pk),
@@ -120,9 +111,7 @@ def round_collected(round_, cycle, chama):
     )
 
 
-# --- contributions -----------------------------------------------------------
-
-
+# contributions 
 def penalty_applied(contribution, round_, chama):
     notify(
         [contribution.membership.user],
@@ -137,8 +126,7 @@ def penalty_applied(contribution, round_, chama):
     )
 
 
-# --- payments ----------------------------------------------------------------
-
+#  payment
 
 def payment_reported(payment, contribution, round_, chama):
     notify(
@@ -182,8 +170,7 @@ def payment_rejected(payment, round_, chama):
     )
 
 
-# --- payouts -----------------------------------------------------------------
-
+#  payouts 
 
 def payout_sent(payout, round_, chama, actor):
     notify(
