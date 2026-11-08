@@ -14,6 +14,7 @@ from pesapod.services import lock_chama
 
 from .models import Contribution, Payout, SavingsCycle, SavingsRound, Transaction
 from .permissions import require_role
+from . import events
 
 Role = Membership.Role
 
@@ -142,7 +143,7 @@ def _open_round(cycle, chama, round_number):
             for member in members.values()
         ]
     )
-
+    events.round_opened(round_, cycle, chama)
     return round_
 
 
@@ -188,6 +189,7 @@ def activate_cycle(user, cycle_id):
     cycle.save(update_fields=["payout_order", "number_of_rounds", "status"])
 
     first_round = _open_round(cycle, chama, 1)
+    events.cycle_activated(cycle, chama, first_round)
     return cycle, first_round
 
 
