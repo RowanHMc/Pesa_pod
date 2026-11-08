@@ -357,6 +357,13 @@ class Payout(models.Model):
                 ),
                 name="payout_response_consistency",
             ),
+            models.CheckConstraint(
+                condition=(
+                Q(status="confirmed", confirmed_by__isnull=False)
+                | Q(status__in=["sent", "rejected"], confirmed_by__isnull=True)
+    ),
+    name="payout_confirmation_audit_consistency",
+),
         ]
 
     def save(self, *args, **kwargs):

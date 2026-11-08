@@ -601,11 +601,7 @@ def confirm_payout_on_behalf(user, payout_id, note):
             {"note": ["A confirmation note is required."]}
         )
 
-    escalation_days = getattr(
-        settings,
-        "PAYOUT_ESCALATION_DAYS",
-        3,
-    )
+    escalation_days = payout_escalation_days()
 
     now = timezone.now()
     escalation_time = payout.created_at + timedelta(days=escalation_days)
@@ -638,3 +634,14 @@ def confirm_payout_on_behalf(user, payout_id, note):
     )
 
     return payout
+
+def payout_escalation_days():
+    """Return the configured payout escalation period."""
+    try:
+        days = int(getattr(settings, "PAYOUT_ESCALATION_DAYS", 3))
+    except (TypeError, ValueError):
+        days = 3
+
+    return max(days, 1)
+
+    
