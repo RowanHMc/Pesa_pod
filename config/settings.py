@@ -53,9 +53,9 @@ INSTALLED_APPS = [
     # 'africastalking',
 
     'transactions',
-    'notifications'
-   
-    
+    'notifications',
+     
+    'django_extensions',
 
 ]
 
