@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
-import os
+
 # from dotenv import load_dotenv
 
 # load_dotenv()
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    
     # 'africastalking',
 
     'transactions',
@@ -101,6 +102,13 @@ REST_FRAMEWORK = {
     ],
 
     "EXCEPTION_HANDLER": "config.exceptions.api_exception_handler",
+
+
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+
+    "NUM_PROXIES": config("NUM_PROXIES", default=1, cast=int),
+
 
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
@@ -221,9 +229,9 @@ PAYOUT_ESCALATION_DAYS = 3
 # Notifications.
 NOTIFICATION_RETENTION_DAYS = 90
 # Used for the link in emails, e.g. "https://app.example.com".
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+FRONTEND_URL = config("FRONTEND_URL", default="")
 
 # 6. Daily jobs endpoint. Leave the token empty and the endpoint stays off.
 #    Use a long random value, e.g.:
 #    python -c "import secrets; print(secrets.token_urlsafe(48))"
-JOBS_SECRET_TOKEN = os.environ.get("JOBS_SECRET_TOKEN", "")
+JOBS_SECRET_TOKEN = config("JOBS_SECRET_TOKEN", debug="")

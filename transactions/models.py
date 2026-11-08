@@ -300,6 +300,19 @@ class Payout(models.Model):
         on_delete=models.PROTECT,
         related_name="recorded_payouts",
     )
+    confirmed_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.PROTECT,
+    related_name="confirmed_payouts",
+    null=True,
+    blank=True,
+)
+
+    confirmation_note = models.CharField(
+    max_length=200,
+    blank=True,
+    default="",
+)
     # Worked out by the system from the confirmed contributions.
     amount = models.DecimalField(
         max_digits=12,
