@@ -5,11 +5,7 @@ from rest_framework_simplejwt.token_blacklist.models import (
 
 
 def revoke_all_refresh_tokens(user):
-    """Blacklist every outstanding refresh token the user holds.
-
-    Used after a password change or reset so old sessions stop working.
-    (Access tokens still live until they expire, so keep their lifetime short.)
-    """
+    """Blacklist every outstanding refresh token the user holds."""
     live = OutstandingToken.objects.filter(
         user=user, blacklistedtoken__isnull=True
     )
