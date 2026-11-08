@@ -529,6 +529,7 @@ def _complete_round_and_advance(cycle, chama, round_, now):
     else:
         cycle.status = SavingsCycle.Status.COMPLETED
         cycle.save(update_fields=["status"])
+        events.cycle_completed(cycle, chama)
 
 @transaction.atomic
 def respond_to_payout(user, payout_id, *, accept, reason=""):
