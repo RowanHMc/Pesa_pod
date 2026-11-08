@@ -1,0 +1,25 @@
+name: Pesapod daily jobs
+
+# Runs the daily jobs (late penalties, reminders, the email digest, retries and
+# cleanup) by calling the API once a day. GitHub schedules use UTC:
+# 05:00 UTC is 08:00 in Nairobi. GitHub may start a run a few minutes late.
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch: # lets you run it by hand from the Actions tab
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call the daily jobs endpoint
+        env:
+          JOBS_URL: ${{ secrets.JOBS_URL }}
+          JOBS_SECRET_TOKEN: ${{ secrets.JOBS_SECRET_TOKEN }}
+        run: |
+          # A sleeping free-tier server can take a minute to wake, so allow
+          # plenty of time and retry. Retrying is safe: every step is idempotent.
+          curl --fail-with-body --silent --show-error \
+            --max-time 180 --retry 4 --retry-delay 30 --retry-all-errors \
+            -X POST -H "X-Jobs-Token: $JOBS_SECRET_TOKEN" "$JOBS_URL"
