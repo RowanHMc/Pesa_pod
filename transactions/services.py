@@ -248,6 +248,7 @@ def cancel_cycle(user, cycle_id, reason=""):
     cycle.cancelled_at = timezone.now()
     cycle.cancellation_reason = reason
     cycle.save(update_fields=["status", "cancelled_at", "cancellation_reason"])
+    events.cycle_cancelled(cycle, chama, user,reason)
     return cycle, summary
 
 def penalty_rule():
