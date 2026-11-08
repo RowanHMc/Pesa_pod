@@ -28,23 +28,19 @@ DIGEST_MAX_AGE_DAYS = 7
 DIGEST_MAX_LINES = 20
 
 
-# --- helpers -----------------------------------------------------------------
+# helpers
 
 
 def retention_days():
     return int(getattr(settings, "NOTIFICATION_RETENTION_DAYS", 90))
 
-
 def app_url():
     return getattr(settings, "FRONTEND_URL", "").rstrip("/")
-
 
 def _can_email(user):
     return bool(user.email) and user.is_active and getattr(user, "is_email_verified", True)
 
-
 _LOOK_UP = object()
-
 
 def _wants_email(user, category, preferences=_LOOK_UP):
     """Whether this person should get this category by email. Preferences are
@@ -57,8 +53,7 @@ def _wants_email(user, category, preferences=_LOOK_UP):
     return True if preferences is None else preferences.wants_email(category)
 
 
-# --- creating ----------------------------------------------------------------
-
+# creating 
 
 def notify(recipients, kind, title, body, *, dedupe_key, chama=None, data=None, exclude=()):
     """Create the notification for each recipient (once per recipient and
@@ -99,7 +94,7 @@ def notify(recipients, kind, title, body, *, dedupe_key, chama=None, data=None, 
     return created
 
 
-# --- sending -----------------------------------------------------------------
+# sending
 
 
 def _record_attempt(ids, sent):
