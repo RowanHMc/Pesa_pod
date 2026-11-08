@@ -399,13 +399,15 @@ def report_payment(user, contribution_id, amount, method, reference):
 
     try:
         with transaction.atomic():
-            return Transaction.objects.create(
+            payment = Transaction.objects.create(
                 contribution=contribution,
                 reported_by=user,
                 amount=amount,
                 method=method,
                 reference=reference,
             )
+            events.payment_reported(payment, contribution, round_, chama)
+            return payment
 
     except IntegrityError:
         if Transaction.objects.filter(
