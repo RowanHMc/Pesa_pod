@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
-# import os
+import os
 # from dotenv import load_dotenv
 
 # load_dotenv()
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     # 'africastalking',
 
     'transactions',
+    'notifications'
    
     
 
@@ -204,23 +205,25 @@ EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-# DEFAULT_FROM_EMAIL = f"Pesapod <{config('EMAIL_HOST_USER', default='no-reply@pesapod.gmail.com')}>"
-# if DEBUG:
-#     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-# else:
-#     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-#     EMAIL_HOST = os.environ["EMAIL_HOST"]
-#     EMAIL_PORT = 587
-#     EMAIL_USE_TLS = True
-#     EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
-#     EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
-
-# MAILERS = {
-#     'default': {
-#         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-#     },
-# }
 
 
 AUTH_USER_MODEL = "accounts.User"
- 
+
+# Late penalty: 10% of the amount due, once, after a 4-day grace period.
+# These replace SAVINGS_LATE_PENALTY_AMOUNT, which is no longer used.
+SAVINGS_LATE_PENALTY_PERCENT = "10"
+SAVINGS_LATE_PENALTY_GRACE_DAYS = 4
+
+# A recipient who has not answered a payout after this many days is
+# escalated to the chairperson, who may then confirm on their behalf.
+PAYOUT_ESCALATION_DAYS = 3
+
+# Notifications.
+NOTIFICATION_RETENTION_DAYS = 90
+# Used for the link in emails, e.g. "https://app.example.com".
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+
+# 6. Daily jobs endpoint. Leave the token empty and the endpoint stays off.
+#    Use a long random value, e.g.:
+#    python -c "import secrets; print(secrets.token_urlsafe(48))"
+JOBS_SECRET_TOKEN = os.environ.get("JOBS_SECRET_TOKEN", "")
