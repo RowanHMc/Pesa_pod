@@ -234,4 +234,4 @@ FRONTEND_URL = config("FRONTEND_URL", default="")
 # 6. Daily jobs endpoint. Leave the token empty and the endpoint stays off.
 #    Use a long random value, e.g.:
 #    python -c "import secrets; print(secrets.token_urlsafe(48))"
-JOBS_SECRET_TOKEN = config("JOBS_SECRET_TOKEN", debug="")
+JOBS_SECRET_TOKEN = config("JOBS_SECRET_TOKEN", default="")
