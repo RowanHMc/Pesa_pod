@@ -36,12 +36,7 @@ User = get_user_model()
 
 
 class PublicAPIView(APIView):
-    """Base for endpoints anyone can call.
-
-    authentication_classes is empty so a stale or expired Authorization
-    header cannot make a public endpoint answer 401.
-    """
-
+    """Base for endpoints anyone can call."""
     permission_classes = [AllowAny]
     authentication_classes = []
 
