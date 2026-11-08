@@ -303,8 +303,9 @@ class TransactionViewSet(
     lookup_value_regex = UUID_REGEX
 
     ACTION_PERMISSIONS = {
-        "confirm_payment": [IsTreasurer],
-        "reject_payment": [IsTreasurer],
+        "confirm_payment": [IsPayoutRecipient],
+        "reject_payment": [IsPayoutRecipient],
+        "confirm_on_behaf": [IsChairperson],
     }
 
     def get_queryset(self):
@@ -390,10 +391,18 @@ class PayoutViewSet(
             | Q(
                 round__cycle__chama_id__in=_my_chama_ids(
                     user, Membership.Role.TREASURER
+                )       
+            )
+            | Q(
+                round__cycle__chama_id__in=_my_chama_ids(
+                    user, Membership.Role.CHAIRPERSON
                 )
             )
         ).select_related(
-            "round__cycle__chama", "round__recipient__user", "recorded_by"
+            "round__cycle__chama",
+            "round__recipient__user",
+            "recorded_by",
+            "confirmed_by",
         )
         requested = _status_param(self.request, Payout.Status.values)
         if requested:
