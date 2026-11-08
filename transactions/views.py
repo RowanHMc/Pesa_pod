@@ -1,518 +1,451 @@
-from django.shortcuts import render
-from django.db import transaction
-from django.db.models import Q
-from django.utils import timezone
+import uuid
 
-from rest_framework import mixins, viewsets, status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from django.db.models import Count, OuterRef, Q, Subquery
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from pesapod.models import Membership, Chama
-from .models import SavingsCycle, SavingsRound, Contribution, Transaction
-from .serializers import SavingsCycleSerializer, SavingsRoundSerializer, ContributionSerializer, TransactionSerializer, TransactionRejectionSerializer
+from pesapod.models import Membership
 
-import calendar
-import secrets
+from . import services
+from .models import Contribution, Payout, SavingsCycle, SavingsRound, Transaction
+from .permissions import IsChairperson, IsPayoutRecipient, IsTreasurer
+from .serializers import (
+    ContributionSerializer,
+    CycleCancelSerializer,
+    PayoutSerializer,
+    RejectionSerializer,
+    SavingsCycleDetailSerializer,
+    SavingsCycleSerializer,
+    SavingsCycleUpdateSerializer,
+    SavingsRoundSerializer,
+    TransactionSerializer,
+    ConfirmOnBehalfSerializer,
+)
 
-from datetime import timedelta
+UUID_REGEX = "[0-9a-fA-F-]{36}"
 
-# Create your views here.
+
+
+
+def _my_chama_ids(user, role=None):
+    memberships = Membership.objects.filter(user=user, is_active=True)
+    if role is not None:
+        memberships = memberships.filter(role=role)
+    return memberships.values("chama_id")
+
+
+def _uuid_param(request, name):
+    """A UUID query parameter, or None. A malformed one is a 400, not a 500."""
+    value = request.query_params.get(name)
+    if not value:
+        return None
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        raise ValidationError({name: ["Enter a valid UUID."]})
+
+
+def _status_param(request, choices):
+    value = request.query_params.get("status")
+    if not value:
+        return None
+    if value not in choices:
+        raise ValidationError(
+            {"status": [f"Choose one of: {', '.join(sorted(choices))}."]}
+        )
+    return value
+
+
+class PaginatedActionMixin:
+    def list_response(self, queryset, serializer_class):
+        context = self.get_serializer_context()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            return self.get_paginated_response(
+                serializer_class(page, many=True, context=context).data
+            )
+        return Response(serializer_class(queryset, many=True, context=context).data)
+
+
+class RoleScopedMixin:
+    """Per-action extra permissions, as in the pesapod app."""
+
+    ACTION_PERMISSIONS = {}
+
+    def get_permissions(self):
+        extra = self.ACTION_PERMISSIONS.get(self.action, [])
+        return [IsAuthenticated()] + [permission() for permission in extra]
+
+
+def cycle_queryset(user):
+    latest_round = (
+        SavingsRound.objects.filter(cycle=OuterRef("pk"))
+        .order_by("-round_number")
+        .values("round_number")[:1]
+    )
+    return (
+        SavingsCycle.objects.filter(
+            chama_id__in=_my_chama_ids(user), chama__is_active=True
+        )
+        .select_related("chama")
+        .annotate(current_round=Subquery(latest_round))
+    )
+
+
+def round_queryset(user):
+    payout_status = (
+        Payout.objects.filter(round=OuterRef("pk"))
+        .order_by("-created_at")
+        .values("status")[:1]
+    )
+    return (
+        SavingsRound.objects.filter(
+            cycle__chama_id__in=_my_chama_ids(user), cycle__chama__is_active=True
+        )
+        .select_related("cycle", "recipient__user")
+        .annotate(
+            contribution_count=Count("contributions", distinct=True),
+            paid_count=Count(
+                "contributions",
+                filter=Q(contributions__status=Contribution.Status.PAID),
+                distinct=True,
+            ),
+            payout_status=Subquery(payout_status),
+        )
+    )
+
+
+CONTRIBUTION_RELATED = (
+    "membership__user",
+    "round__cycle__chama",
+)
 
 class SavingsCycleViewSet(
+    RoleScopedMixin,
+    PaginatedActionMixin,
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
     serializer_class = SavingsCycleSerializer
-    permission_classes = [IsAuthenticated]
+    lookup_value_regex = UUID_REGEX
+
+    ACTION_PERMISSIONS = {
+        "partial_update": [IsChairperson],
+        "activate_cycle": [IsChairperson],
+        "cancel": [IsChairperson],
+    }
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return SavingsCycleDetailSerializer
+        return super().get_serializer_class()
 
     def get_queryset(self):
-        return SavingsCycle.objects.filter(
-            chama__memberships__user=self.request.user,
-            chama__memberships__is_active=True,
-            chama__is_active=True,
-        ).distinct()
+        queryset = cycle_queryset(self.request.user)
+        chama = _uuid_param(self.request, "chama")
+        if chama:
+            queryset = queryset.filter(chama_id=chama)
+        requested = _status_param(self.request, SavingsCycle.Status.values)
+        if requested:
+            queryset = queryset.filter(status=requested)
+        return queryset
 
-    @transaction.atomic
     def perform_create(self, serializer):
-        chama = serializer.validated_data["chama"]
+        # The service takes the chama lock, checks the role and the rules.
+        serializer.instance = services.create_cycle(
+            self.request.user, **serializer.validated_data
+        )
 
-        # Lock the chama when validating cycle creation
-        chama = type(chama).objects.select_for_update().get(pk=chama.pk)
+    def partial_update(self, request, *args, **kwargs):
+        """Fix a draft (amount, frequency, start date). PATCH only."""
+        cycle = self.get_object()
+        serializer = SavingsCycleUpdateSerializer(
+            cycle, data=request.data, partial=True, context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        cycle = services.update_draft_cycle(
+            request.user, cycle.pk, serializer.validated_data
+        )
+        return Response(
+            SavingsCycleDetailSerializer(
+                cycle, context=self.get_serializer_context()
+            ).data
+        )
 
-        is_chairperson = Membership.objects.filter(
-            chama=chama,
-            user=self.request.user,
-            role=Membership.Role.CHAIRPERSON,
-            is_active=True,
-        ).exists()
+    @action(detail=True, methods=["post"], url_path="activate", url_name="activate")
+    def activate_cycle(self, request, pk=None):
+        cycle = self.get_object()
+        cycle, first_round = services.activate_cycle(request.user, cycle.pk)
+        return Response(
+            {
+                "detail": "Savings cycle activated successfully.",
+                "status": cycle.status,
+                "number_of_rounds": cycle.number_of_rounds,
+                "payout_order": cycle.payout_order,
+                "current_round": first_round.round_number,
+                "recipient": first_round.recipient_id,
+                "contributions_created": first_round.contributions.count(),
+            }
+        )
 
-        if not is_chairperson:
-            raise PermissionDenied(
-                "Only chairperson can create a saving cycle"
-            )
-        if not chama.is_active:
-            raise ValidationError(
-                "This Chama is inactive"
-            )
-        if SavingsCycle.objects.filter(
-            chama=chama,
-            status__in=[
-                SavingsCycle.Status.DRAFT,
-                SavingsCycle.Status.ACTIVE,
-            ],
-        ).exists():
-            raise ValidationError(
-                "Chama already has an unfinished cycle"
-            )
+    @action(detail=True, methods=["post"], url_path="cancel", url_name="cancel")
+    def cancel(self, request, pk=None):
+        cycle = self.get_object()
+        serializer = CycleCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cycle, summary = services.cancel_cycle(
+            request.user, cycle.pk, serializer.validated_data.get("reason", "")
+        )
+        return Response(
+            {
+                "detail": "Savings cycle cancelled.",
+                "status": cycle.status,
+                **summary,
+            }
+        )
 
-        serializer.save(created_by=self.request.user)
+    @action(detail=True, methods=["get"], url_path="rounds", url_name="rounds")
+    def list_rounds(self, request, pk=None):
+        """All rounds generated so far for this cycle."""
+        cycle = self.get_object()
+        queryset = round_queryset(request.user).filter(cycle=cycle)
+        return self.list_response(queryset, SavingsRoundSerializer)
+
+
+class SavingsRoundViewSet(
+    RoleScopedMixin,
+    PaginatedActionMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Visible to every active member of the chama."""
+
+    serializer_class = SavingsRoundSerializer
+    lookup_value_regex = UUID_REGEX
+
+    ACTION_PERMISSIONS = {"list_contributions": [IsTreasurer]}
+
+    def get_queryset(self):
+        queryset = round_queryset(self.request.user)
+        cycle = _uuid_param(self.request, "cycle")
+        if cycle:
+            queryset = queryset.filter(cycle_id=cycle)
+        requested = _status_param(self.request, SavingsRound.Status.values)
+        if requested:
+            queryset = queryset.filter(status=requested)
+        return queryset
 
     @action(
         detail=True,
-        methods=["post"],
-        url_path="generate-rounds"
+        methods=["get"],
+        url_path="contributions",
+        url_name="contributions",
     )
-    @transaction.atomic
-    def generate_rounds(self, request, pk=None):
-        cycle = self.get_object()
-
-        # Lock the chama and cycle during generation
-        Chama.objects.select_for_update().get(pk=cycle.chama_id)
-        cycle = SavingsCycle.objects.select_for_update().get(pk=cycle.pk)
-
-        if not Membership.objects.filter(
-            chama=cycle.chama,
-            user=request.user,
-            role=Membership.Role.CHAIRPERSON,
-            is_active=True,
-        ).exists():
-            raise PermissionDenied(
-                "Only the Chairperson can generate rounds."
-                )
-        if cycle.status != SavingsCycle.Status.ACTIVE:
-            raise ValidationError("The savings cycle must be active.")
-       
-        previous_round = cycle.rounds.order_by("-round_number").first()
-
-        if not previous_round:
-            raise ValidationError("The first round has not been created")
-        if previous_round.status != SavingsRound.Status.COMPLETED:
-            raise ValidationError("complete the previous round first")
-       
-        next_number = previous_round.round_number + 1
-
-        if next_number > cycle.number_of_rounds:
-            raise ValidationError(
-                "The cycle has reached its maximin rounds"
-            )
-        
-
-        payout_order = cycle.payout_order
-
-        if not payout_order:
-            raise ValidationError("Payout order is missing.")
-
-        recipient_index = (next_number - 1) % len(payout_order)
-        recipient_id = payout_order[recipient_index]
-
-        if cycle.frequency == SavingsCycle.Frequency.WEEKLY:
-            due_date = cycle.start_date + timedelta(
-                weeks=next_number -1
-            )
-        else:
-            month_index = cycle.start_date.month -1 + next_number -1
-            year = cycle.start_date.year + month_index // 12
-            month = month_index % 12 + 1
-            day = min(
-                cycle.start_date.day,
-                calendar.monthrange(year, month)[1],
-            )
-            due_date = cycle.start_date.replace(
-                year=year, month=month, day=day
-            )
-        
-
-        round_ = SavingsRound.objects.create(
-            cycle=cycle,
-            round_number = next_number,
-            recipient_id =recipient_id,
-            due_date =due_date,
+    def list_contributions(self, request, pk=None):
+        """Every contribution of this round, for the treasurer.
+        Add ?status=pending to see who still owes."""
+        round_ = self.get_object()
+        queryset = (
+            Contribution.objects.filter(round=round_)
+            .select_related(*CONTRIBUTION_RELATED)
+            .order_by("membership__user__username")
         )
-       
-        members = Membership.objects.filter(
-        chama=cycle.chama,
-        id__in=payout_order,
-        )
-        
-        Contribution.objects.bulk_create([
-        Contribution(
-            round=round_,
-            membership=member,
-            amount_due=cycle.contribution_amount,
-        )
-        for member in members
-        ])
-        
-        return Response(
-            SavingsRoundSerializer(round_).data,
-            status=status.HTTP_201_CREATED,
-        )
+        requested = _status_param(request, Contribution.Status.values)
+        if requested:
+            queryset = queryset.filter(status=requested)
+        return self.list_response(queryset, ContributionSerializer)
 
-
-    @action(detail=True, methods=["post"], url_path="activate")
-    @transaction.atomic
-    def activate_cycle(self, request, pk=None):
-        cycle = self.get_object()
-
-        # Lock chama and cycle during activation
-        Chama.objects.select_for_update().get(pk=cycle.chama_id)
-        cycle = SavingsCycle.objects.select_for_update().get(pk=cycle.pk)
-
-        if not Membership.objects.filter(
-            chama=cycle.chama,
-            user=request.user,
-            role=Membership.Role.CHAIRPERSON,
-            is_active=True,
-        ).exists():
-            raise PermissionDenied(
-                "Only the Chairperson can activate a cycle."
-            )
-
-        if cycle.status != SavingsCycle.Status.DRAFT:
-            raise ValidationError("Cycle must be in draft status to be activated.")
-        if cycle.rounds.exists():
-            raise ValidationError("This cycle has rounds use a new draft cycle")
-        if SavingsCycle.objects.filter(
-            chama=cycle.chama,
-            status=SavingsCycle.Status.ACTIVE,
-        ).exclude(pk=cycle.pk).exists():
-            raise ValidationError("Another cycle is already active.")
-
-        members = list(Membership.objects.filter(
-            chama=cycle.chama,
-            is_active=True,
-        ).order_by("id"))
-
- 
-        if len(members) < 2:
-            raise ValidationError("At least two members are required.")
-        if cycle.number_of_rounds < 1:
-            raise ValidationError(
-                "A savings cycle must have at least one round."
-                )
-        payout_order = [member.id for member in members]
-        secrets.SystemRandom().shuffle(payout_order)
-
-        cycle.payout_order = payout_order
-        cycle.status = SavingsCycle.Status.ACTIVE
-        cycle.save(update_fields=["payout_order", "status"])
-
-        first_round = SavingsRound.objects.create(
-            cycle = cycle,
-            round_number = 1,
-            recipient_id = payout_order[0],
-            due_date=cycle.start_date,
-        )
-
-        Contribution.objects.bulk_create([
-            Contribution(
-                round=first_round,
-                membership = member,
-                amount_due = cycle.contribution_amount,
-            )
-            for member in members
-        ])
-
-        return Response({
-            "detail": "Savings cycle activated successfully.",
-            "status": cycle.status,
-            "payout_order": payout_order,
-            "current_round": 1,
-            "recipient": payout_order[0],
-            "contributions_created": len(members),
-        })
 
 class ContributionViewSet(
-        mixins.ListModelMixin,
-        mixins.RetrieveModelMixin,
-        viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
 ):
+    """The logged-in member's own contributions."""
+
     serializer_class = ContributionSerializer
-    permission_classes =[IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    lookup_value_regex = UUID_REGEX
 
     def get_queryset(self):
-        return Contribution.objects.filter(
-            membership__user = self.request.user,
-        ).select_related(
-            "membership",
-            "round",
-            "round__cycle"
-        )
+        queryset = Contribution.objects.filter(
+            membership__user=self.request.user
+        ).select_related(*CONTRIBUTION_RELATED)
+        round_id = _uuid_param(self.request, "round")
+        if round_id:
+            queryset = queryset.filter(round_id=round_id)
+        cycle_id = _uuid_param(self.request, "cycle")
+        if cycle_id:
+            queryset = queryset.filter(round__cycle_id=cycle_id)
+        requested = _status_param(self.request, Contribution.Status.values)
+        if requested:
+            queryset = queryset.filter(status=requested)
+        return queryset.order_by("-round__due_date", "id")
 
-class TransansactionViewSet(
+
+class TransactionViewSet(
+    RoleScopedMixin,
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet,   
+    viewsets.GenericViewSet,
 ):
+    """Members see their own payment reports. The treasurer sees every report
+    in their chama and is the only one who can confirm or reject them."""
+
     serializer_class = TransactionSerializer
-    permission_classes = [IsAuthenticated]
+    lookup_value_regex = UUID_REGEX
+
+    ACTION_PERMISSIONS = {
+        "confirm_payment": [IsTreasurer],
+        "reject_payment": [IsTreasurer],
+    }
 
     def get_queryset(self):
-        treasurer_chama_ids = Membership.objects.filter(
-            user=self.request.user,
-            is_active=True,
-            role__in=[
-                Membership.Role.TREASURER,
-                Membership.Role.CHAIRPERSON,
-            ],
-        ).values_list("chama_id", flat=True)
-
-        queryset = Transaction.objects.filter(
-            Q(contribution__membership__user=self.request.user)
-            | Q(contribution__round__cycle__chama_id__in=treasurer_chama_ids)
-        ).select_related(
-            "contribution",
-            "contribution__membership",
-            "contribution__round",
-            "contribution__round__cycle",
-            "reported_by",
-            "reviewed_by",
-        ).distinct()
-
-        requested_status = self.request.query_params.get("status")
-
-        if requested_status in Transaction.Status.values:
-            queryset = queryset.filter(status=requested_status)
-
+        user = self.request.user
+        queryset = (
+            Transaction.objects.filter(
+                Q(contribution__membership__user=user)
+                | Q(
+                    contribution__round__cycle__chama_id__in=_my_chama_ids(
+                        user, Membership.Role.TREASURER
+                    )
+                )
+            )
+            .select_related(
+                "contribution__round__cycle__chama",
+                "reported_by",
+                "reviewed_by",
+            )
+        )
+        requested = _status_param(self.request, Transaction.Status.values)
+        if requested:
+            queryset = queryset.filter(status=requested)
+        round_id = _uuid_param(self.request, "round")
+        if round_id:
+            queryset = queryset.filter(contribution__round_id=round_id)
         return queryset
 
-    @transaction.atomic
     def perform_create(self, serializer):
-        contribution = serializer.validated_data["contribution"]
-
-        contribution = Contribution.objects.select_for_update().select_related(
-            "membership",
-            "membership__chama",
-            "round__cycle",
-        ).get(pk=contribution.pk)
-
-        membership = contribution.membership
-        cycle = contribution.round.cycle
-
-        # The member can only report their own contribution.
-        if membership.user_id != self.request.user.id:
-            raise PermissionDenied(
-                "You can only report payment for your own contribution."
-            )
-
-        if not membership.is_active:
-            raise PermissionDenied(
-                "Your membership is not active."
-            )
-
-        if membership.chama_id != cycle.chama_id:
-            raise ValidationError(
-                "This contribution does not belong to the cycle's Chama."
-            )
-
-        if not membership.chama.is_active:
-            raise ValidationError(
-                "This Chama is inactive."
-            )
-
-        if cycle.status != SavingsCycle.Status.ACTIVE:
-            raise ValidationError(
-                "The savings cycle is not active."
-            )
-
-        if contribution.status != Contribution.Status.PENDING:
-            raise ValidationError(
-                "This contribution is not pending."
-            )
-
-        if contribution.round.status in [
-            SavingsRound.Status.COMPLETED,
-            SavingsRound.Status.CANCELLED,
-        ]:
-            raise ValidationError(
-                "This round is no longer accepting payment reports."
-            )
-
-        # Prevent multiple pending or confirmed reports.
-        existing_transaction = Transaction.objects.filter(
-            contribution=contribution,
-            status__in=[
-                Transaction.Status.PENDING,
-                Transaction.Status.CONFIRMED,
-            ],
-        ).exists()
-
-        if existing_transaction:
-            raise ValidationError(
-                "A payment report already exists for this contribution."
-            )
-
-        serializer.save(
-            contribution=contribution,
-            reported_by=self.request.user,
+        data = serializer.validated_data
+        serializer.instance = services.report_payment(
+            self.request.user,
+            data["contribution"].pk,
+            data["amount"],
+            data["method"],
+            data["reference"],
         )
 
-    def get_review_context(self, request):
-        transaction_record = self.get_object()
-
-        chama_id = transaction_record.contribution.round.cycle.chama_id
-
-        # Lock records in a consistent order before reviewing.
-        Chama.objects.select_for_update().get(pk=chama_id)
-
-        cycle = SavingsCycle.objects.select_for_update().get(
-            pk=transaction_record.contribution.round.cycle_id
+    def _review(self, request, confirm, reason=""):
+        payment = self.get_object()
+        payment = services.review_payment(
+            request.user, payment.pk, confirm=confirm, reason=reason
         )
+        payment = self.get_queryset().get(pk=payment.pk)
+        return Response(self.get_serializer(payment).data)
 
-        round_ = SavingsRound.objects.select_for_update().get(
-            pk=transaction_record.contribution.round_id
-        )
-
-        contribution = Contribution.objects.select_for_update().get(
-            pk=transaction_record.contribution_id
-        )
-
-        transaction_record = Transaction.objects.select_for_update().get(
-            pk=transaction_record.pk
-        )
-
-        # Only the active Treasurer can review payments.
-        is_treasurer = Membership.objects.filter(
-            chama_id=chama_id,
-            user=request.user,
-            role=Membership.Role.TREASURER,
-            is_active=True,
-        ).exists()
-
-        if not is_treasurer:
-            raise PermissionDenied(
-                "Only the Treasurer can review payment reports."
-            )
-
-        # Prevent a Treasurer from reviewing their own payment report.
-        # if transaction_record.reported_by_id == request.user.id:
-        #     raise PermissionDenied(
-        #         "You cannot review your own payment report."
-        #     )
-
-        if cycle.status != SavingsCycle.Status.ACTIVE:
-            raise ValidationError(
-                "The savings cycle is not active."
-            )
-
-        if round_.status in [
-            SavingsRound.Status.COMPLETED,
-            SavingsRound.Status.CANCELLED,
-        ]:
-            raise ValidationError(
-                "This round can no longer be reviewed."
-            )
-
-        if contribution.status != Contribution.Status.PENDING:
-            raise ValidationError(
-                "This contribution is no longer pending."
-            )
-
-        if transaction_record.status != Transaction.Status.PENDING:
-            raise ValidationError(
-                "This payment report has already been reviewed."
-            )
-
-        return transaction_record, contribution, round_, cycle
-
-    @action(detail=True, methods=["post"], url_path="confirm")
-    @transaction.atomic
+    @action(detail=True, methods=["post"], url_path="confirm", url_name="confirm")
     def confirm_payment(self, request, pk=None):
-        (
-            transaction_record,
-            contribution,
-            round_,
-            cycle,
-        ) = self.get_review_context(request)
+        return self._review(request, confirm=True)
 
-        now = timezone.now()
-
-        # Update the transaction audit details.
-        transaction_record.status = Transaction.Status.CONFIRMED
-        transaction_record.reviewed_by = request.user
-        transaction_record.reviewed_at = now
-        transaction_record.rejection_reason = ""
-
-        transaction_record.save(update_fields=[
-            "status",
-            "reviewed_by",
-            "reviewed_at",
-            "rejection_reason",
-        ])
-
-        # Mark the contribution as paid.
-        contribution.status = Contribution.Status.PAID
-        contribution.save(update_fields=["status"])
-
-        # Check whether every contribution in this round is paid.
-        pending_contributions = Contribution.objects.filter(
-            round=round_,
-            status=Contribution.Status.PENDING,
-        ).exists()
-
-        if not pending_contributions:
-            round_.status = SavingsRound.Status.COMPLETED
-            round_.save(update_fields=["status"])
-
-            # Complete the cycle if this was its final round.
-            if round_.round_number >= cycle.number_of_rounds:
-                cycle.status = SavingsCycle.Status.COMPLETED
-                cycle.save(update_fields=["status"])
-
-        return Response(
-            TransactionSerializer(transaction_record).data,
-            status=status.HTTP_200_OK,
-        )
-
-    @action(detail=True, methods=["post"], url_path="reject")
-    @transaction.atomic
+    @action(detail=True, methods=["post"], url_path="reject", url_name="reject")
     def reject_payment(self, request, pk=None):
-        rejection_serializer = TransactionRejectionSerializer(
-            data=request.data
-        )
-        rejection_serializer.is_valid(raise_exception=True)
-
-        (
-            transaction_record,
-            contribution,
-            round_,
-            cycle,
-        ) = self.get_review_context(request)
-
-        transaction_record.status = Transaction.Status.REJECTED
-        transaction_record.reviewed_by = request.user
-        transaction_record.reviewed_at = timezone.now()
-        transaction_record.rejection_reason = (
-            rejection_serializer.validated_data["rejection_reason"]
-        )
-
-        transaction_record.save(update_fields=[
-            "status",
-            "reviewed_by",
-            "reviewed_at",
-            "rejection_reason",
-        ])
-
-        return Response(
-            TransactionSerializer(transaction_record).data,
-            status=status.HTTP_200_OK,
+        serializer = RejectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self._review(
+            request,
+            confirm=False,
+            reason=serializer.validated_data["rejection_reason"],
         )
 
 
+class PayoutViewSet(
+    RoleScopedMixin,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """The treasurer records a payout; the recipient confirms or rejects it.
+    Creating one needs the treasurer role, which the service checks."""
 
+    serializer_class = PayoutSerializer
+    lookup_value_regex = UUID_REGEX
+
+    ACTION_PERMISSIONS = {
+        "confirm_payout": [IsPayoutRecipient],
+        "reject_payout": [IsPayoutRecipient],
+    }
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Payout.objects.filter(
+            Q(round__recipient__user=user)
+            | Q(
+                round__cycle__chama_id__in=_my_chama_ids(
+                    user, Membership.Role.TREASURER
+                )
+            )
+        ).select_related(
+            "round__cycle__chama", "round__recipient__user", "recorded_by"
+        )
+        requested = _status_param(self.request, Payout.Status.values)
+        if requested:
+            queryset = queryset.filter(status=requested)
+        round_id = _uuid_param(self.request, "round")
+        if round_id:
+            queryset = queryset.filter(round_id=round_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        serializer.instance = services.record_payout(
+            self.request.user, data["round"].pk, data["method"], data["reference"]
+        )
+
+    def _respond(self, request, accept, reason=""):
+        payout = self.get_object()
+        payout = services.respond_to_payout(
+            request.user, payout.pk, accept=accept, reason=reason
+        )
+        payout = self.get_queryset().get(pk=payout.pk)
+        return Response(self.get_serializer(payout).data)
+
+    @action(detail=True, methods=["post"], url_path="confirm", url_name="confirm")
+    def confirm_payout(self, request, pk=None):
+        return self._respond(request, accept=True)
+
+    @action(detail=True, methods=["post"], url_path="reject", url_name="reject")
+    def reject_payout(self, request, pk=None):
+        serializer = RejectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self._respond(
+            request,
+            accept=False,
+            reason=serializer.validated_data["rejection_reason"],
+        )
+# notifications
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="confirm-on-behalf",
+        url_name="confirm-on-behalf",
+    )
+    def confirm_on_behalf(self, request, pk=None):
+        """The chairperson confirms for a recipient who has not answered after
+        the escalation period (3 days by default). A note is required."""
+        payout = self.get_object()
+        serializer = ConfirmOnBehalfSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payout = services.confirm_payout_on_behalf(
+            request.user, payout.pk, serializer.validated_data["note"]
+        )
+        payout = self.get_queryset().get(pk=payout.pk)
+        return Response(self.get_serializer(payout).data)
 
