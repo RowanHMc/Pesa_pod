@@ -23,7 +23,7 @@ def otp_max_attempts():
 
 
 def issue_code(user, purpose):
-    """Create a fresh code for the user, retiring any unused ones. Returns the plain code."""
+    """Create a fresh code for the user, any unused ones become invalid."""
     code = f"{secrets.randbelow(1_000_000):06d}"
     with transaction.atomic():
         EmailOTP.objects.filter(user=user, purpose=purpose, is_used=False).update(
@@ -39,11 +39,7 @@ def issue_code(user, purpose):
 
 
 def check_code(user, purpose, code):
-    """Check a submitted code. Returns OK, INVALID or LOCKED.
-
-    Results are returned, not raised, so a wrong guess's attempt counter is
-    committed even when the caller is inside a transaction.
-    """
+    """Check a submitted code. Returns OK, INVALID or LOCKED."""
     with transaction.atomic():
         otp = (
             EmailOTP.objects.select_for_update()
