@@ -1,7 +1,7 @@
 import calendar
 import secrets
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -248,19 +248,33 @@ def cancel_cycle(user, cycle_id, reason=""):
     cycle.save(update_fields=["status", "cancelled_at", "cancellation_reason"])
     return cycle, summary
 
-
 def penalty_rule():
-    amount = Decimal(str(getattr(settings, "SAVINGS_LATE_PENALTY_AMOUNT", "0")))
-    grace_days = int(getattr(settings, "SAVINGS_LATE_PENALTY_GRACE_DAYS", 0))
-    return amount, grace_days
+    percent = Decimal(
+        str(getattr(settings, "SAVINGS_LATE_PENALTY_PERCENT", "0"))
+    )
+    grace_days = int(
+        getattr(settings, "SAVINGS_LATE_PENALTY_GRACE_DAYS", 4)
+    )
+    return percent, grace_days
 
+def penalty_amount_for(contribution):
+    """Calculate the late penalty based on the contribution amount."""
+    percent, _ = penalty_rule()
+    penalty = (
+        contribution.amount_due * percent / Decimal("100")
+    )
+    return penalty.quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP,
+    )
 
 def apply_penalty_if_due(contribution, round_, cycle, today=None):
     """Add the late penalty if it is due. The caller holds the locks."""
-    amount, grace_days = penalty_rule()
-    if amount <= 0:
+    percent, grace_days = penalty_rule()
+    if percent <= 0:
         return False
     today = today or timezone.localdate()
+
     if (
         cycle.status != SavingsCycle.Status.ACTIVE
         or round_.status != SavingsRound.Status.ACTIVE
@@ -269,24 +283,34 @@ def apply_penalty_if_due(contribution, round_, cycle, today=None):
         or today <= round_.due_date + timedelta(days=grace_days)
     ):
         return False
+
     # A member who reported in time is not penalised for a slow review.
     if Transaction.objects.filter(
-        contribution=contribution, status__in=ACTIVE_REPORT_STATUSES
+        contribution=contribution,
+        status__in=ACTIVE_REPORT_STATUSES,
     ).exists():
         return False
-    contribution.penalty_amount = amount
-    contribution.penalty_applied_at = timezone.now()
-    contribution.save(update_fields=["penalty_amount", "penalty_applied_at"])
-    return True
 
+    penalty = penalty_amount_for(contribution)
+    if penalty <= 0:
+        return False
+    contribution.penalty_amount = penalty
+    contribution.penalty_applied_at = timezone.now()
+    contribution.save(
+        update_fields=["penalty_amount", "penalty_applied_at"]
+    )
+    return True
 
 def apply_late_penalties(today=None):
     """Daily job (see the apply_late_penalties command). Returns how many
     contributions were penalised."""
-    amount, grace_days = penalty_rule()
-    if amount <= 0:
+    percent, grace_days = penalty_rule()
+
+    if percent <= 0:
         return 0
+
     today = today or timezone.localdate()
+
     ids = list(
         Contribution.objects.filter(
             status=Contribution.Status.PENDING,
@@ -297,12 +321,20 @@ def apply_late_penalties(today=None):
         ).values_list("pk", flat=True)
     )
     count = 0
+
     for contribution_id in ids:
         with transaction.atomic():
-            _, cycle, round_, contribution = lock_contribution(contribution_id)
-            if apply_penalty_if_due(contribution, round_, cycle, today):
+            _, cycle, round_, contribution = lock_contribution(
+                contribution_id
+            )
+
+            if apply_penalty_if_due(
+                contribution, round_, cycle, today
+            ):
                 count += 1
+
     return count
+
 
 @transaction.atomic
 def report_payment(user, contribution_id, amount, method, reference):
