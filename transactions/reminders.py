@@ -1,11 +1,5 @@
-# after notifications
-"""Daily checks that create reminder notifications. Each function works out
-what is due from the data, so it is safe to run more than once a day: the
-notification's dedupe key makes a repeat a no-op. Each returns how many
-notifications it created.
-
-Dates are Africa/Nairobi dates (timezone.localdate), so "due in 3 days" means
-three days in Nairobi whatever time the scheduler fires."""
+"""Daily checks that create reminder notifications. Each works out
+what is due from the date, so it is safe to run more than once a day"""
 from datetime import timedelta
 
 from django.db.models import Count
@@ -83,7 +77,7 @@ def send_contribution_reminders(today=None):
             round__due_date__in=list(by_due_date),
         )
         # Someone who already reported payment is waiting on the treasurer,
-        # not late.
+       
         .exclude(transactions__status__in=LIVE_REPORTS)
         .select_related("membership__user", "round__cycle__chama")
     )
@@ -181,12 +175,7 @@ def send_review_reminders(now=None):
 
 
 def send_payout_reminders(now=None):
-    """Payout chores that can hold up a whole chama:
-    - the treasurer has not recorded a payout for a collected round;
-    - the recipient has not answered a payout (reminded on each day before the
-      escalation period ends);
-    - the recipient still has not answered after the escalation period, so the
-      chairperson is told they can confirm on the recipient's behalf."""
+
     now = now or timezone.now()
     today = timezone.localdate(now)
     count = 0
