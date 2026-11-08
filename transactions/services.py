@@ -473,7 +473,27 @@ def record_payout(user, round_id, method, reference):
         raise ValidationError(
             {"reference": ["This payout reference has already been used."]}
         )
+def _complete_round_and_advance(cycle, chama, round_, now):
+    """Complete a round and open the next one, or complete the cycle."""
 
+    round_.status = SavingsRound.Status.COMPLETED
+    round_.completed_at = now
+
+    round_.save(
+        update_fields=["status", "completed_at"]
+    )
+
+    next_round_number = round_.round_number + 1
+
+    if next_round_number <= cycle.number_of_rounds:
+        _open_round(
+            cycle,
+            chama,
+            next_round_number,
+        )
+    else:
+        cycle.status = SavingsCycle.Status.COMPLETED
+        cycle.save(update_fields=["status"])
 
 @transaction.atomic
 def respond_to_payout(user, payout_id, *, accept, reason=""):
@@ -510,38 +530,111 @@ def respond_to_payout(user, payout_id, *, accept, reason=""):
     if not accept:
         payout.status = Payout.Status.REJECTED
         payout.rejection_reason = reason
+        payout.confirmed_by = None
+        payout.confirmation_note = ""
 
         payout.save(
             update_fields=[
                 "status",
                 "responded_at",
                 "rejection_reason",
+                "confirmed_by",
+                "confirmation_note",
             ]
         )
 
         return payout
 
     payout.status = Payout.Status.CONFIRMED
-    payout.save(update_fields=["status", "responded_at"])
+    payout.confirmed_by = user
+    payout.confirmation_note = ""
 
-    round_.status = SavingsRound.Status.COMPLETED
-    round_.completed_at = now
-
-    round_.save(
-        update_fields=["status", "completed_at"]
+    payout.save(
+        update_fields=[
+            "status",
+            "responded_at",
+            "confirmed_by",
+            "confirmation_note",
+        ]
     )
 
-    # Automatically open the next round, or complete the cycle.
-    next_round_number = round_.round_number + 1
+    _complete_round_and_advance(
+        cycle,
+        chama,
+        round_,
+        now,
+    )
 
-    if next_round_number <= cycle.number_of_rounds:
-        _open_round(
-            cycle,
-            chama,
-            next_round_number,
+    return payout
+
+@transaction.atomic
+def confirm_payout_on_behalf(user, payout_id, note):
+    round_id = Payout.objects.values_list(
+        "round_id",
+        flat=True,
+    ).get(pk=payout_id)
+
+    chama, cycle, round_ = lock_round(round_id)
+
+    payout = Payout.objects.select_for_update().get(pk=payout_id)
+
+    require_role(
+        user,
+        chama.pk,
+        Role.CHAIRPERSON,
+        "Only the chairperson can confirm a payout on behalf of a recipient.",
+    )
+
+    if cycle.status != SavingsCycle.Status.ACTIVE:
+        raise ValidationError("The savings cycle is not active.")
+
+    if round_.status != SavingsRound.Status.COLLECTED:
+        raise ValidationError("This round is not waiting for a payout.")
+
+    if payout.status != Payout.Status.SENT:
+        raise ValidationError("This payout has already been answered.")
+
+    note = note.strip()
+
+    if not note:
+        raise ValidationError(
+            {"note": ["A confirmation note is required."]}
         )
-    else:
-        cycle.status = SavingsCycle.Status.COMPLETED
-        cycle.save(update_fields=["status"])
+
+    escalation_days = getattr(
+        settings,
+        "PAYOUT_ESCALATION_DAYS",
+        3,
+    )
+
+    now = timezone.now()
+    escalation_time = payout.created_at + timedelta(days=escalation_days)
+
+    if now < escalation_time:
+        raise ValidationError(
+            f"The chairperson can only confirm this payout after "
+            f"{escalation_days} days without a recipient response."
+        )
+
+    payout.status = Payout.Status.CONFIRMED
+    payout.confirmed_by = user
+    payout.confirmation_note = note
+    payout.responded_at = now
+
+    payout.save(
+        update_fields=[
+            "status",
+            "confirmed_by",
+            "confirmation_note",
+            "responded_at",
+        ]
+    )
+
+    _complete_round_and_advance(
+        cycle,
+        chama,
+        round_,
+        now,
+    )
 
     return payout

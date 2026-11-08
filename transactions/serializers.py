@@ -286,17 +286,17 @@ class PayoutSerializer(serializers.ModelSerializer):
     round = MyRoundField()
     round_number = serializers.IntegerField(source="round.round_number", read_only=True)
     chama_name = serializers.CharField(
-        source="round.cycle.chama.name", read_only=True
+        source="round.cycle.chama.name", read_only=True,
     )
-    recipient = serializers.IntegerField(source="round.recipient_id", read_only=True)
+    recipient = serializers.IntegerField(source="round.recipient_id", read_only=True,)
     recipient_username = serializers.CharField(
-        source="round.recipient.user.username", read_only=True
+        source="round.recipient.user.username", read_only=True,
     )
     recorded_by_username = serializers.CharField(
-        source="recorded_by.username", read_only=True
+        source="recorded_by.username", read_only=True,
     )
     confirmed_by_username = serializers.CharField(
-        source="confirmed_by.username", read_only=True, allow_null=True
+        source="confirmed_by.username", read_only=True, allow_null=True,
     )
 
     class Meta:
