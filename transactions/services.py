@@ -537,13 +537,16 @@ def record_payout(user, round_id, method, reference):
 
     try:
         with transaction.atomic():
-            return Payout.objects.create(
+            payout = Payout.objects.create(
                 round=round_,
                 recorded_by=user,
                 amount=round_pot(round_),
                 method=method,
                 reference=reference,
             )
+            events.payout_sent(payout, round_, chama, user)
+            return payout
+        
     except IntegrityError:
         raise ValidationError(
             {"reference": ["This payout reference has already been used."]}
