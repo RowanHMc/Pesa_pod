@@ -427,51 +427,89 @@ def review_payment(user, transaction_id, *, confirm, reason=""):
     contribution_id = Transaction.objects.values_list(
         "contribution_id", flat=True
     ).get(pk=transaction_id)
+
     chama, cycle, round_, contribution = lock_contribution(contribution_id)
     payment = Transaction.objects.select_for_update().get(pk=transaction_id)
 
     # Only the treasurer reviews payments, their own included.
     require_role(
-        user, chama.pk, Role.TREASURER, "Only the treasurer can review payment reports."
+        user,
+        chama.pk,
+        Role.TREASURER,
+        "Only the treasurer can review payment reports.",
     )
+
     if cycle.status != SavingsCycle.Status.ACTIVE:
         raise ValidationError("The savings cycle is not active.")
+
     if round_.status != SavingsRound.Status.ACTIVE:
         raise ValidationError("This round can no longer be reviewed.")
+
     if contribution.status != Contribution.Status.PENDING:
         raise ValidationError("This contribution is no longer pending.")
+
     if payment.status != Transaction.Status.PENDING:
         raise ValidationError("This payment report has already been reviewed.")
 
     now = timezone.now()
     payment.reviewed_by = user
     payment.reviewed_at = now
+
+    # Payment rejected
     if not confirm:
         payment.status = Transaction.Status.REJECTED
         payment.rejection_reason = reason
+
         payment.save(
-            update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"]
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "rejection_reason",
+            ]
         )
+
+        events.payment_rejected(payment, round_, chama)
+
         return payment
 
+    # Payment confirmed
     payment.status = Transaction.Status.CONFIRMED
     payment.rejection_reason = ""
+
     payment.save(
-        update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"]
+        update_fields=[
+            "status",
+            "reviewed_by",
+            "reviewed_at",
+            "rejection_reason",
+        ]
     )
+
     contribution.status = Contribution.Status.PAID
     contribution.paid_at = now
-    contribution.save(update_fields=["status", "paid_at"])
 
-    # Everything collected: the round now waits for the payout.
+    contribution.save(
+        update_fields=["status", "paid_at"]
+    )
+
+    events.payment_confirmed(payment, round_, chama)
+
+    # Check whether every contribution in this round has been paid.
     if not Contribution.objects.filter(
-        round=round_, status=Contribution.Status.PENDING
+        round=round_,
+        status=Contribution.Status.PENDING,
     ).exists():
+
         round_.status = SavingsRound.Status.COLLECTED
         round_.collected_at = now
-        round_.save(update_fields=["status", "collected_at"])
-    return payment
 
+        round_.save(
+            update_fields=["status", "collected_at"]
+        )
+        events.round_collected(round_, cycle, chama)
+
+    return payment
 
 def round_pot(round_):
     """What the recipient is owed: the contributions, not the penalties
