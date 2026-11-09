@@ -621,7 +621,7 @@ def respond_to_payout(user, payout_id, *, accept, reason=""):
                 "confirmation_note",
             ]
         )
-
+        events.payout_rejected(payout, round_, chama)
         return payout
 
     payout.status = Payout.Status.CONFIRMED
@@ -636,6 +636,7 @@ def respond_to_payout(user, payout_id, *, accept, reason=""):
             "confirmation_note",
         ]
     )
+    events.payout_confirmed(payout, round_, chama,user, on_behalf=False,)
 
     _complete_round_and_advance(
         cycle,
