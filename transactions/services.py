@@ -302,6 +302,7 @@ def apply_penalty_if_due(contribution, round_, cycle, today=None):
     contribution.save(
         update_fields=["penalty_amount", "penalty_applied_at"]
     )
+    events.penalty_applied(contribution, round_, cycle.chama,)
     return True
 
 def apply_late_penalties(today=None):
@@ -705,6 +706,7 @@ def confirm_payout_on_behalf(user, payout_id, note):
             "responded_at",
         ]
     )
+    events.payout_confirmed(payout, round_, chama, user, on_behalf=True,)
 
     _complete_round_and_advance(
         cycle,
