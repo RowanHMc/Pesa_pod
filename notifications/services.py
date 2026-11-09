@@ -1,11 +1,6 @@
-"""The notification engine. Other apps call notify() and nothing else here.
-
-- notify() writes the in-app notification in the caller's transaction, so there
-  is never a notification without the event (and never an event whose
-  notification was lost).
-- Tasks are emailed right after the transaction commits. Reminders and updates
-  wait for the daily digest, which sends one email per person.
-- Email problems never break the action that caused the notification.
+"""Other apps call notify() and nothing else here.
+notify() writes the in-app notification in the caller's transaction, so there
+  is never a notification without the event
 """
 import logging
 from datetime import timedelta
