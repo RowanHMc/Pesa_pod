@@ -152,7 +152,6 @@ def payment_confirmed(payment, round_, chama):
         dedupe_key=f"payment_confirmed:{payment.pk}",
         chama=chama,
         data=_ids(chama, round_.cycle, round_, payment.contribution, payment),
-        exclude=[payment.reviewed_by],
     )
 
 
@@ -166,7 +165,6 @@ def payment_rejected(payment, round_, chama):
         dedupe_key=f"payment_rejected:{payment.pk}",
         chama=chama,
         data=_ids(chama, round_.cycle, round_, payment.contribution, payment),
-        exclude=[payment.reviewed_by],
     )
 
 
