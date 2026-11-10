@@ -25,5 +25,34 @@ function Login() {
         }))
     };
 
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            await login(formData.username, formData.password);
+            navigate("/dashboard");
+        } catch (error) {
+            const response = error.response;
+
+            if (
+                response?.status === 403 &&
+                response.data?.code === "email_not_verified"
+            ) {
+                setError(
+                    "Please Verify Email Before Logging in"
+                );
+            } else {
+                setError(
+                    response?.data?.detail || 
+                    "unable to log in. check your details"
+                );
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
     
+
 }
