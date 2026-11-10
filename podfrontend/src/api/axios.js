@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 const api = axios.create({
@@ -9,5 +8,17 @@ const api = axios.create({
     },
 });
 
+// access token attach to auth requests
+api.interceptors.request.use((config) => {
+    const accessToken = localStorage.getItem("access_token");
+
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    return config;
+});
+
 export default api;
+
 
