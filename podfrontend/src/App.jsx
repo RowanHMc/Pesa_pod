@@ -1,21 +1,27 @@
+import { Navigate, Route, Routes } from "react-router-dom";
 
-function App() {
+import Login from "./pages/auth/Login";
+
+function Dashboard() {
     return (
-        <main className="min-h-screen bg-powder-light flex items-center justify-center px-4">
-            <div className="bg-white rounded-2xl shadow-lg border border-powder p-10 text-center max-w-md w-full">
-                <h1 className="text-4xl font-bold text-ink">
-                    Pesa <span className="text-orange">Pod</span>
-                </h1>
-
-                <p className="text-muted mt-3">
-                    Save together. Grow together.
-                </p>
-
-                <div className="w-16 h-1 bg-orange rounded-full mx-auto mt-6" />
-            </div>
+        <main className="min-h-screen bg-powder-light flex items-center justify-center">
+            <h1 className="text-3xl font-bold text-ink">
+                Welcome to Pesa Pod
+            </h1>
         </main>
     );
 }
 
+function App() {
+    return (
+        <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+    );
+}
+
 export default App;
+
 
