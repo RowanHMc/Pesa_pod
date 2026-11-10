@@ -49,4 +49,28 @@ function Register() {
 
             setSuccess(response.data.detail);
 
+            setFormData({
+                username: "",
+                email: "",
+                phone_number: "",
+                password: "",
+                password2: "",
+            });
+        } catch (error) {
+            const data = error.response?.data;
+
+            const message =
+                data?.detail ||
+                (data && Object.values(data)
+                    .flat()
+                    .join(" ")) ||
+                "Registration failed. Please try again.";
+
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+
 }
