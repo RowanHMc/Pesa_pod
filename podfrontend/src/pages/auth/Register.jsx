@@ -303,3 +303,5 @@ function Register() {
         </main>
     );
 }
+
+export default Register;
