@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@theme {
+    --color-powder: #B0D9E8;
+    --color-powder-light: #EAF5F9;
+    --color-orange: #FF7900;
+    --color-orange-light: #FFF1E5;
+    --color-ink: #263746;
+    --color-muted: #64748B;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -7,4 +16,6 @@
 body {
     margin: 0;
     font-family: Arial, Helvetica, sans-serif;
+    background-color: #FFFFFF;
+    color: #263746;
 }
