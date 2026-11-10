@@ -11,7 +11,7 @@ export function AuthProvider({children}) {
         setUser(response.data);
         return response.data;
     }
-};
+
     useEffect(() => {
         // restore session when page is eg: refreshed
         const restoreSession = async () => {
@@ -87,6 +87,7 @@ export function AuthProvider({children}) {
         </AuthContext.Provider>
     );
 
+}
 export function useAuth() {
     return useContext(AuthContext)
 }
