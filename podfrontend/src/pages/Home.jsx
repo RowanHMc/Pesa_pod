@@ -362,9 +362,6 @@ function Home() {
                         </div>
 
                         <div>
-                            <h3 className="font-bold mb-4">
-                                Quick Links
-                            </h3>
 
                             <div className="flex flex-col gap-3 text-sm text-muted">
                                 <a href="#home" className="hover:text-orange transition">
