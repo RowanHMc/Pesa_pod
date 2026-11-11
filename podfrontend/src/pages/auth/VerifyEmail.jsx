@@ -1,15 +1,17 @@
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Wallet, Mail } from "lucide-react";
 
 import api from "../../api/axios";
 
-function VerifyEmail(){
+function VerifyEmail() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [email] = useState(location.state?.email || "");
-    const [code, setCodde] = useState("");
+    const email = location.state?.email || "";
+
+    const [code, setCode] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -18,25 +20,31 @@ function VerifyEmail(){
         setError("");
         setLoading(true);
 
-        try{
-            await api.post("accounts/auth/vertify-email",{
+        try {
+            await api.post("accounts/auth/verify-email/", {
                 email,
                 code,
             });
-            navigate("/login,", {
-                replace:true,
-                state:{message:"Email has been Verified. Login"},
+
+            navigate("/login", {
+                replace: true,
+                state: { message: "Email has been verified. Login." },
             });
+
         } catch (error) {
             const data = error.response?.data;
+
             const message = data?.detail ||
-            (data && Object.values(data).flat().join(" ")) ||
-            "Verification failed. Check code or retry";
+                (data && Object.values(data).flat().join(" ")) ||
+                "Verification failed. Check code or retry.";
+
             setError(message);
+
         } finally {
             setLoading(false);
         }
     };
+
     if (!email) {
         return (
             <main className="min-h-screen bg-powder-light flex items-center justify-center px-4">
@@ -48,6 +56,7 @@ function VerifyEmail(){
                     <p className="text-muted text-sm mb-6">
                         Please register first to receive a verification code.
                     </p>
+
                     <Link
                         to="/register"
                         className="text-orange font-semibold hover:underline"
@@ -84,9 +93,11 @@ function VerifyEmail(){
                         <div className="inline-flex items-center justify-center bg-orange-light p-4 rounded-full mb-4">
                             <Mail size={30} className="text-orange" />
                         </div>
+
                         <h2 className="text-2xl font-bold text-ink">
                             Verify your email
                         </h2>
+
                         <p className="text-muted text-sm mt-3">
                             We sent a six-digit verification code to:
                         </p>
@@ -103,7 +114,6 @@ function VerifyEmail(){
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-
                         <div>
                             <label
                                 htmlFor="code"
@@ -118,7 +128,11 @@ function VerifyEmail(){
                                 name="code"
                                 value={code}
                                 onChange={(event) =>
-                                    setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                                    setCode(
+                                        event.target.value
+                                            .replace(/\D/g, "")
+                                            .slice(0, 6)
+                                    )
                                 }
                                 required
                                 maxLength={6}
@@ -136,7 +150,6 @@ function VerifyEmail(){
                         >
                             {loading ? "Verifying..." : "Verify email"}
                         </button>
-
                     </form>
 
                     <div className="border-t border-slate-100 mt-7 pt-6 text-center">
@@ -150,7 +163,6 @@ function VerifyEmail(){
                             </Link>
                         </p>
                     </div>
-
                 </div>
 
                 <p className="text-center text-xs text-muted mt-7">
@@ -163,6 +175,3 @@ function VerifyEmail(){
 }
 
 export default VerifyEmail;
-
-
-
