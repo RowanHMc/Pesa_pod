@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate} from "react-router-dom";
 import { Wallet, Eye, EyeOff } from "lucide-react";
+
 
 import api from "../../api/axios";
 
 function Register() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -47,15 +49,7 @@ function Register() {
                 formData
             );
 
-            setSuccess(response.data.detail);
-
-            setFormData({
-                username: "",
-                email: "",
-                phone_number: "",
-                password: "",
-                password2: "",
-            });
+            navigate("/verify-email",{state: {email: response.data.email,},});
         } catch (error) {
             const data = error.response?.data;
 
