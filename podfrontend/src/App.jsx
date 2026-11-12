@@ -8,6 +8,7 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import Payments from "./pages/transactions/Payments";
+import Chamas from "./pages/chamas/Chamas";
 
 
 
@@ -22,6 +23,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={< DashboardOverview/>} />
                 <Route path="payments" element={<Payments/>} />
+                <Route path="chamas" element={<Chamas/>} />
             </Route>
         </Routes>
     );
