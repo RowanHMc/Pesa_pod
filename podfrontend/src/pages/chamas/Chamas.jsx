@@ -6,12 +6,14 @@ import ChamaList from "./ChamaList";
 import CreateChama from "./CreateChamas";
 
 function Chamas() {
-    const { chamas, loading, error } = useChamas();
+    const  { chamas, setChamas, loading, error } = useChamas();
     const  [showForm, setShowForm] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
 
     const handleChamaCreated = (newChama) => {
         setChamas((currentChamas) => [newChama, ...currentChamas]);
         setShowForm(false);
+        setSuccessMessage("Chama created successfully!")
     };
 
 
@@ -30,7 +32,10 @@ function Chamas() {
 
                 {!showForm && (
                     <button
-                        onClick={() => setShowForm(true)}
+                        onClick={() => {
+                            setSuccessMessage("");
+                            setShowForm(true);
+                        }}
                         className="flex items-center justify-center gap-2 bg-ink text-white px-5 py-3 rounded-xl text-sm font-semibold hover:opacity-90"
                     >
                         <Plus size={18} />
@@ -44,6 +49,11 @@ function Chamas() {
                     onCreated={handleChamaCreated}
                     onCancel={() => setShowForm(false)}
                 />
+            )}
+            {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 text-sm">
+                    {successMessage}
+            </div>
             )}
 
             <div className="bg-white rounded-2xl border border-slate-100 p-6">
