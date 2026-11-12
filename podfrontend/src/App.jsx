@@ -1,12 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
+// import Dashboard from "./pages/Dashboard";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
+import Payments from "./pages/transactions/Payments";
 
 
 
@@ -20,6 +21,7 @@ function App() {
 
             <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={< DashboardOverview/>} />
+                <Route path="payments" element={<Payments/>} />
             </Route>
         </Routes>
     );
