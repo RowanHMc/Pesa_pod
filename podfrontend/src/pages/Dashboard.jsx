@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
     Wallet,
@@ -14,11 +14,16 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
 
 function Dashboard() {
     const { user, loading, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    const [chamas, setChamas] = useState([]);
+    const [chamasLoading, setChamasLoading] = useState(true);
+    const [chamasError, setChamasError] = useState("");
+    
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-powder-light">
