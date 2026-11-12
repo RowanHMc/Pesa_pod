@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import useChamas from "../hooks/useChamas";
+import ChamaList from "./chamas/ChamaList";
 
 function Dashboard() {
     const { user, loading, logout } = useAuth();
@@ -235,23 +236,15 @@ function Dashboard() {
                                 My Chamas
                             </h3>
 
-                            <p className="text-sm text-muted mt-1">
-                                Your chama groups will appear here.
-                            </p>
-
-                            <div className="min-h-48 flex flex-col items-center justify-center text-center">
-                                <div className="bg-powder-light p-4 rounded-full mb-4">
-                                    <Users size={30} className="text-ink" />
-                                </div>
-
-                                <p className="font-semibold text-ink">
-                                    No chama information loaded yet
+                                <p className="text-sm text-muted mt-1">
+                                    Your savings groups.
                                 </p>
 
-                                <p className="text-sm text-muted mt-2">
-                                    We'll connect this section to your chama data next.
-                                </p>
-                            </div>
+                            <ChamaList
+                                chamas={chamas}
+                                loading={chamasLoading}
+                                error={chamasError}
+                            />  
                         </div>
 
                         <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
