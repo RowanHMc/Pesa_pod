@@ -1,4 +1,5 @@
-import { Users } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function ChamaList({ chamas, loading, error }) {
     if (loading) {
@@ -49,10 +50,20 @@ function ChamaList({ chamas, loading, error }) {
                                 {chama.description || "No description provided."}
                             </p>
                         </div>
-
+                        
+                    <div className="flex items-center gap-3">
                         <span className="bg-orange-light text-orange text-xs font-semibold px-3 py-2 rounded-full w-fit">
                             {chama.my_role?.replaceAll("_", " ")}
                         </span>
+
+                        <Link
+                            to={`/dashboard/chamas/${chama.chama_id}/invitations`}
+                            className="flex items-center gap-2 bg-powder-light text-ink text-sm font-semibold px-3 py-2 rounded-lg hover:bg-powder transition"
+                        >
+                            <UserPlus size={16} />
+                            Manage Invitations
+                        </Link>
+                    </div>
                     </div>
 
                     <div className="flex flex-wrap gap-5 mt-5 pt-4 border-t border-slate-100 text-sm">
