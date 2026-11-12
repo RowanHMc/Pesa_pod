@@ -9,7 +9,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import Payments from "./pages/transactions/Payments";
 import Chamas from "./pages/chamas/Chamas";
-
+import Invitations from "./pages/invitations/Invitations";
 
 
 function App() {
@@ -24,6 +24,7 @@ function App() {
                 <Route index element={< DashboardOverview/>} />
                 <Route path="payments" element={<Payments/>} />
                 <Route path="chamas" element={<Chamas/>} />
+                <Route path="invitations" element={<Invitations/>} />
             </Route>
         </Routes>
     );

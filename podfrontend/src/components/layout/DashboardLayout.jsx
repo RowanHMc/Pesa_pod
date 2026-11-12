@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     CreditCard,
     Users,
+    Mail,
     LogOut,
     Menu,
     X,
@@ -21,6 +22,7 @@ function DashboardLayout() {
     const navigation = [
         { label: "Overview", path: "/dashboard", icon: LayoutDashboard, end: true },
         { label: "Chamas", path: "/dashboard/chamas", icon: Users},
+        { label: "Invitations", path: "/dashboard/invitations", icon: CreditCard },
         { label: "Payments", path: "/dashboard/payments", icon: CreditCard },
     ];
 
