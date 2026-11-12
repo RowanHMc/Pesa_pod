@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
     Wallet,
@@ -12,50 +11,14 @@ import {
     Menu,
     X,
 } from "lucide-react";
-
 import { useAuth } from "../context/AuthContext";
-import api from "../api/axios";
+import useChamas from "../hooks/useChamas";
 
 function Dashboard() {
     const { user, loading, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const {chamas, loading: chamasLoading, error: chamasError,} = useChamas();
 
-    const [chamas, setChamas] = useState([]);
-    const [chamasLoading, setChamasLoading] = useState(true);
-    const [chamasError, setChamasError] = useState("");
-
-    useEffect(() => {
-    let isMounted = true;
-
-    const fetchChamas = async () => {
-        try {
-            const response = await api.get("chamas/");
-            const data = response.data;
-            const chamaList = Array.isArray(data)  // list response
-                ? data
-                : data?.results || [];
-            if (isMounted) {
-                setChamas(chamaList);
-                setChamasError("");
-            }
-        } catch (error) {
-            if (isMounted) {
-                setChamasError(
-                    error.response?.data?.detail ||
-                    "Unable to load your chamas. Please try again."
-                );
-            }
-        } finally {
-            if (isMounted) {
-                setChamasLoading(false);
-            }
-        }
-    };
-    fetchChamas();
-    return () => { 
-        isMounted = false; // prevent update if unmounts before request finishes
-    };
-}, []);
 
     if (loading) {
         return (
