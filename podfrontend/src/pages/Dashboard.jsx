@@ -14,12 +14,14 @@ import {
 import { useAuth } from "../context/AuthContext";
 import useChamas from "../hooks/useChamas";
 import ChamaList from "./chamas/ChamaList";
+import useCycles from "../hooks/useCycles";
 
 function Dashboard() {
     const { user, loading, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const {chamas, loading: chamasLoading, error: chamasError,} = useChamas();
-
+    const {chamas, loading: chamasLoading, error: chamasError} = useChamas();
+    const {cycles, loading: cyclesLoading, error: cyclesError,} = useCycles();
+    
 
     if (loading) {
         return (
@@ -217,7 +219,7 @@ function Dashboard() {
                                     </div>
 
                                     <p className="text-2xl font-bold text-ink">
-                                        {card.title === "My Chamas" ? chamas.length : "—"}
+                                        {card.title === "My Chamas" ? chamas.length : card.title === "Active Cycles" ? cycles.length : "-"}
                                     </p>
 
                                     <p className="text-xs text-muted mt-2">
@@ -235,11 +237,9 @@ function Dashboard() {
                             <h3 className="font-bold text-lg text-ink">
                                 My Chamas
                             </h3>
-
                                 <p className="text-sm text-muted mt-1">
                                     Your savings groups.
                                 </p>
-
                             <ChamaList
                                 chamas={chamas}
                                 loading={chamasLoading}
