@@ -169,7 +169,7 @@ function DashboardLayout() {
 
                 {/* Page content */}
                 <div className="p-5 sm:p-8 max-w-7xl mx-auto">
-                    <Outlet />
+                    <Outlet context={{ user }}/>
                 </div>
 
             </main>
