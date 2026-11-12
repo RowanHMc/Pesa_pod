@@ -10,7 +10,7 @@ class Chama(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150, unique= True)
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

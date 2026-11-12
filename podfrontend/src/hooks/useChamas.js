@@ -9,15 +9,12 @@ function useChamas() {
 
     useEffect(() => {
         let isMounted = true;
-
         const fetchChamas = async () => {
             try {
                 const data = await getMyChamas();
-
                 const chamaList = Array.isArray(data)
                     ? data
                     : data?.results || [];
-
                 if (isMounted) {
                     setChamas(chamaList);
                     setError("");
@@ -37,12 +34,11 @@ function useChamas() {
         };
 
         fetchChamas();
-
         return () => {
             isMounted = false;
         };
     }, []);
 
-    return { chamas, loading, error };
+    return { chamas, setChamas, loading, error };
 }
 export default useChamas;

@@ -9,35 +9,40 @@ function CreateChama({ onCreated, onCancel }) {
     const [error, setError] = useState("");
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-        try {
-            const chama = await createChama({
-                name: name.trim(),
-                description: description.trim(),
-            });
+    e.preventDefault();
 
-            onCreated(chama);
-        } catch (error) {
-            const responseData = error.response?.data;
+    setLoading(true);
+    setError("");
 
-            if (responseData?.detail) {
-                setError(responseData.detail);
-            } else if (responseData && typeof responseData === "object") {
-                setError(
-                    Object.values(responseData)
-                        .flat()
-                        .join(" ")
-                );
-            } else {
-                setError("Unable to create chama. Please try again.");
-            }
-        } finally {
-            setLoading(false);
+    let createdChama;
+
+    try {
+        createdChama = await createChama({
+            name: name.trim(),
+            description: description.trim(),
+        });
+    } catch (error) {
+        const responseData = error.response?.data;
+
+        if (responseData?.detail) {
+            setError(responseData.detail);
+        } else if (responseData && typeof responseData === "object") {
+            setError(
+                Object.values(responseData)
+                    .flat()
+                    .join(" ")
+            );
+        } else {
+            setError("Unable to create chama. Please try again.");
         }
-    };
 
+        setLoading(false);
+        return;
+    }
+
+    setLoading(false);
+    onCreated(createdChama);
+};
     return (
         <div className="bg-white border border-slate-100 rounded-2xl p-6">
             <div className="mb-6">
