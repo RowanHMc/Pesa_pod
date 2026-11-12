@@ -16,6 +16,7 @@ import useChamas from "../hooks/useChamas";
 import ChamaList from "./chamas/ChamaList";
 import useCycles from "../hooks/useCycles";
 import useContributions from "../hooks/useContributions";
+import usePendingPayments from "../hooks/usePendingPayments";
 
 function Dashboard() {
     const { user, loading, logout } = useAuth();
@@ -23,6 +24,7 @@ function Dashboard() {
     const {chamas, loading: chamasLoading, error: chamasError} = useChamas();
     const {cycles, loading: cyclesLoading, error: cyclesError} = useCycles();
     const {contributions, loading: contributionsLoading, error: contributionsError,} = useContributions();
+    const {payments, loading: paymentsLoading, error: paymentsError,} = usePendingPayments();
     
 
     if (loading) {
@@ -221,7 +223,11 @@ function Dashboard() {
                                     </div>
 
                                     <p className="text-2xl font-bold text-ink">
-                                        {card.title === "My Chamas" ? chamas.length : card.title === "Active Cycles" ? cycles.length : card.title === "Contributions" ? contributions.length : "-"}
+                                        {card.title === "My Chamas" ? chamas.length 
+                                        : card.title === "Active Cycles" ? cycles.length 
+                                        : card.title === "Contributions" ? contributions.length 
+                                        : card.title === "Pending Payments" ? payments.length
+                                        : "-"}
                                     </p>
 
                                     <p className="text-xs text-muted mt-2">
