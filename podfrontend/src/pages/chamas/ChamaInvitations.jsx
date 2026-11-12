@@ -13,6 +13,7 @@ function ChamaInvitations() {
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState("");
     const [actionError, setActionError] = useState("");
+    const [processingId, setProcessingId] = useState(null);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
