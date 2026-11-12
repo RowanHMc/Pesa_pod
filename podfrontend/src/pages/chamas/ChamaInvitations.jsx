@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, UserPlus } from "lucide-react";
 
 import useChamaInvitations from "../../hooks/useChamaInvitations";
-import { proposeInvitation } from "../../api/invitations";
+import { proposeInvitation , reviewInvitation} from "../../api/invitations";
+
 
 function ChamaInvitations() {
     const { chamaId } = useParams();
@@ -37,6 +37,31 @@ function ChamaInvitations() {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleReview = async (invitationId, decision) => {
+    setProcessingId(invitationId);
+    setSuccess("");
+    setActionError("");
+
+    try {
+        await reviewInvitation(chamaId, invitationId, decision);
+
+        setSuccess(
+            decision === "approve"
+                ? "Invitation approved successfully."
+                : "Invitation rejected successfully."
+        );
+
+        await refetch();
+    } catch (error) {
+        setActionError(
+            error.response?.data?.detail ||
+            "Unable to review invitation. Please try again."
+        );
+    } finally {
+        setProcessingId(null);
+    }
     };
 
     return (
@@ -144,10 +169,36 @@ function ChamaInvitations() {
                                 <p className="text-sm text-muted mt-2">
                                     Proposed by: {invitation.invited_by_username}
                                 </p>
-
                                 <p className="text-xs text-muted mt-2">
                                     Status: {invitation.status.replaceAll("_", " ")}
                                 </p>
+                                {invitation.status === "pending_approval" && (
+                                <div className="flex gap-3 mt-4">
+                                    <button
+                                        onClick={() =>
+                                            handleReview(invitation.invitation_id, "approve")
+                                        }
+                                        disabled={processingId !== null}
+                                        className="bg-ink text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition"
+                                    >
+                                        {processingId === invitation.invitation_id
+                                            ? "Processing..."
+                                            : "Approve"}
+                                    </button>
+
+                                    <button
+                                        onClick={() =>
+                                            handleReview(invitation.invitation_id, "reject")
+                                        }
+                                        disabled={processingId !== null}
+                                        className="border border-red-200 text-red-600 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-50 disabled:opacity-50 transition"
+                                    >
+                                        {processingId === invitation.invitation_id
+                                            ? "Processing..."
+                                            : "Reject"}
+                                    </button>
+                                </div>
+                            )}
                             </div>
                         ))}
                     </div>
