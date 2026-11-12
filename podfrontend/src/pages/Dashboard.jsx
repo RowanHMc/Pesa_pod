@@ -52,8 +52,8 @@ function Dashboard() {
         }
     };
     fetchChamas();
-    return () => {
-        isMounted = false;
+    return () => { 
+        isMounted = false; // prevent update if unmounts before request finishes
     };
 }, []);
 
@@ -237,7 +237,6 @@ function Dashboard() {
                             },
                         ].map((card) => {
                             const Icon = card.icon;
-
                             return (
                                 <div
                                     key={card.title}
@@ -254,7 +253,7 @@ function Dashboard() {
                                     </div>
 
                                     <p className="text-2xl font-bold text-ink">
-                                        —
+                                        {card.title === "My Chamas" ? chamas.length : "—"}
                                     </p>
 
                                     <p className="text-xs text-muted mt-2">
