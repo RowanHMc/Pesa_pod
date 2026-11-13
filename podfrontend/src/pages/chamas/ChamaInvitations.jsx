@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, UserPlus } from "lucide-react";
 
 import useChamaInvitations from "../../hooks/useChamaInvitations";
-import { proposeInvitation , reviewInvitation} from "../../api/invitations";
+import { proposeInvitation , reviewInvitation, cancelInvitation} from "../../api/invitations";
 
 
 function ChamaInvitations() {
@@ -63,6 +63,27 @@ function ChamaInvitations() {
         setProcessingId(null);
     }
     };
+
+    const handleCancel = async (invitationId) => {
+    setProcessingId(invitationId);
+    setSuccess("");
+    setActionError("");
+
+    try {
+        await cancelInvitation(chamaId, invitationId);
+
+        setSuccess("Invitation cancelled successfully.");
+
+        await refetch();
+    } catch (error) {
+        setActionError(
+            error.response?.data?.detail ||
+            "Unable to cancel invitation. Please try again."
+        );
+    } finally {
+        setProcessingId(null);
+    }
+};
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -172,6 +193,7 @@ function ChamaInvitations() {
                                 <p className="text-xs text-muted mt-2">
                                     Status: {invitation.status.replaceAll("_", " ")}
                                 </p>
+
                                 {invitation.status === "pending_approval" && (
                                 <div className="flex gap-3 mt-4">
                                     <button
@@ -197,7 +219,20 @@ function ChamaInvitations() {
                                             ? "Processing..."
                                             : "Reject"}
                                     </button>
-                                </div>
+                                </div>                                
+                            )}
+                            {["pending_approval", "awaiting_acceptance"].includes(
+                                invitation.status
+                            ) && (
+                                <button
+                                    onClick={() => handleCancel(invitation.invitation_id)}
+                                    disabled={processingId !== null}
+                                    className="mt-4 border border-slate-200 text-muted text-sm font-semibold px-4 py-2 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition"
+                                >
+                                    {processingId === invitation.invitation_id
+                                        ? "Processing..."
+                                        : "Cancel Invitation"}
+                                </button>
                             )}
                             </div>
                         ))}

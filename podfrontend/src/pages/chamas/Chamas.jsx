@@ -24,7 +24,6 @@ function Chamas() {
                     <h2 className="text-2xl font-bold text-ink">
                         My Chamas
                     </h2>
-
                     <p className="text-sm text-muted mt-1">
                         Manage and keep track of your savings groups.
                     </p>
