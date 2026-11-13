@@ -5,6 +5,11 @@ export const getMyChamas = async () => {
     return response.data;
 };
 
+export const getChama = async (chamaId) => {
+    const response = await api.get(`chamas/${chamaId}/`);
+    return response.data;
+};
+
 export const createChama = async (chamaData) => {
     const response = await api.post("chamas/", chamaData);
     return response.data;
