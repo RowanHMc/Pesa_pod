@@ -1,5 +1,5 @@
 
-import { Link,useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import {
     Users,
     Wallet,
@@ -16,20 +16,22 @@ import ChamaList from "../chamas/ChamaList";
 
 function DashboardOverview() {
     const { user } = useOutletContext();
-
+    const [selectedTreasurerChamaId, setSelectedTreasurerChamaId] = useState("");
     const {chamas,loading: chamasLoading, error: chamasError, } = useChamas();  
     const { cycles } = useCycles();
     const { contributions } = useContributions();
-    const { payments, loading, error } = usePendingPayments(selectedTreasurerChama?.chama_id);
-    const [selectedTreasurerChamaId, setSelectedTreasurerChamaId] = useState("");
+    
 
-const treasurerChamas = chamas.filter(
+
+    const treasurerChamas = chamas.filter(
     (chama) => chama.my_role === "treasurer"
     );
     const selectedTreasurerChama =
         treasurerChamas.find(
             (chama) => chama.chama_id === selectedTreasurerChamaId
         ) || treasurerChamas[0];
+
+    const { payments, loading, error } = usePendingPayments(selectedTreasurerChama?.chama_id);
         
     const summaryCards = [
         {
