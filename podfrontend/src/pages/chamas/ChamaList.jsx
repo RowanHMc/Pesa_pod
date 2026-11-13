@@ -63,6 +63,13 @@ function ChamaList({ chamas, loading, error }) {
                             <UserPlus size={16} />
                             Manage Invitations
                         </Link>
+                        <Link
+                            to={`/dashboard/chamas/${chama.chama_id}/members`}
+                            className="flex items-center gap-2 bg-powder-light text-ink text-sm font-semibold px-3 py-2 rounded-lg hover:bg-powder transition"
+                        >
+                            <Users size={16} />
+                            Members
+                        </Link>                        
                     </div>
                     </div>
 

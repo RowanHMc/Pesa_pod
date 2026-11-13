@@ -63,11 +63,11 @@ function DashboardLayout() {
             )}
 
             {/* Sidebar */}
-            <aside
-                className={`fixed inset-y-0 left-0 z-50 w-64 bg-ink text-white flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto ${
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                }`}
-            >
+                <aside
+                    className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-ink text-white flex flex-col transition-transform duration-300 lg:translate-x-0 lg:sticky lg:top-0 lg:shrink-0 ${
+                        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    }`}
+                >
                 <div className="h-20 px-6 flex items-center justify-between border-b border-white/10">
                     <div className="flex items-center gap-3">
                         <div className="bg-powder p-2 rounded-lg">
@@ -88,7 +88,7 @@ function DashboardLayout() {
                     </button>
                 </div>
 
-                <div className="px-4 py-8 flex-1">
+                <div className="px-4 py-8 flex-1 min-h-0 overflow-y-auto">
                     <p className="text-xs uppercase tracking-wider text-slate-400 px-3 mb-4">
                         Main Menu
                     </p>
@@ -119,7 +119,7 @@ function DashboardLayout() {
                     </nav>
                 </div>
 
-                <div className="p-4 border-t border-white/10">
+                <div className="p-4 border-t border-white/10 shrink-0">
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition"

@@ -11,6 +11,7 @@ import Payments from "./pages/transactions/Payments";
 import Chamas from "./pages/chamas/Chamas";
 import Invitations from "./pages/invitations/Invitations";
 import ChamaInvitations from "./pages/chamas/ChamaInvitations";
+import ChamaMembers from "./pages/chamas/ChamaMembers";
 
 function App() {
     return (
@@ -26,6 +27,7 @@ function App() {
                 <Route path="chamas" element={<Chamas/>} />
                 <Route path="invitations" element={<Invitations/>} />
                 <Route path="chamas/:chamaId/invitations" element={<ChamaInvitations/>} />
+                <Route path="chamas/:chamaId/members" element={<ChamaMembers/>} />
             </Route>
         </Routes>
     );

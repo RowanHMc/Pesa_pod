@@ -1,5 +1,5 @@
 
-import { useOutletContext } from "react-router-dom";
+import { Link,useOutletContext } from "react-router-dom";
 import {
     Users,
     Wallet,
@@ -33,24 +33,28 @@ function DashboardOverview() {
             icon: Users,
             description: "Your savings groups",
             value: chamas.length,
+            path:"/dashboard/chamas"
         },
         {
             title: "Active Cycles",
             icon: Wallet,
             description: "Ongoing savings cycles",
             value: cycles.length,
+            path:"/dashboard/cycles"
         },
         {
             title: "Contributions",
             icon: HandCoins,
             description: "Your contribution records",
             value: contributions.length,
+            path: "/dashboard/contributions"
         },
         {
             title: "Pending Payments",
             icon: Bell,
             description: "Awaiting confirmation",
             value: payments.length,
+            path: "/dashboard/payments"
         },
     ];
 
@@ -68,39 +72,43 @@ function DashboardOverview() {
             </section>
 
             {/* Summary cards */}
-            <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-                {summaryCards.map((card) => {
-                    const Icon = card.icon;
 
-                    return (
-                        <div
-                            key={card.title}
-                            className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm"
-                        >
-                            <div className="flex items-center justify-between mb-5">
-                                <p className="text-sm font-medium text-muted">
-                                    {card.title}
-                                </p>
+{/* Summary cards */}
+<section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+    {summaryCards.map((card) => {
+        const Icon = card.icon;
 
-                                <div className="bg-orange-light p-3 rounded-lg">
-                                    <Icon size={21} className="text-orange" />
-                                </div>
-                            </div>
+        return (
+            <Link
+                key={card.title}
+                to={card.path}
+                className="block bg-white border border-slate-100 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-powder transition"
+            >
+                <div className="flex items-center justify-between mb-5">
+                    <p className="text-sm font-medium text-muted">
+                        {card.title}
+                    </p>
 
-                            <p className="text-2xl font-bold text-ink">
-                                {card.value}
-                            </p>
+                    <div className="bg-orange-light p-3 rounded-lg">
+                        <Icon size={21} className="text-orange" />
+                    </div>
+                </div>
 
-                            <p className="text-xs text-muted mt-2">
-                                {card.description}
-                            </p>
-                        </div>
-                    );
-                })}
-            </section>
+                <p className="text-2xl font-bold text-ink">
+                    {card.value}
+                </p>
+
+                <p className="text-xs text-muted mt-2">
+                    {card.description}
+                </p>
+            </Link>
+        );
+    })}
+</section>
+
 
             {/* Main dashboard panels */}
-            <section className="grid lg:grid-cols-3 gap-6">
+            <section className="grid lg:grid-cols-3 gap-6 items-start">
 
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
                     <h3 className="font-bold text-lg text-ink">
