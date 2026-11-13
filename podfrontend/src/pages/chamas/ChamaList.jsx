@@ -1,4 +1,5 @@
-import { Users, UserPlus } from "lucide-react";
+
+import { Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function ChamaList({ chamas, loading, error }) {
@@ -9,13 +10,15 @@ function ChamaList({ chamas, loading, error }) {
             </p>
         );
     }
-     if (error) {
+
+    if (error) {
         return (
             <p className="text-sm text-red-600 text-center py-10">
                 {error}
             </p>
         );
     }
+
     if (chamas.length === 0) {
         return (
             <div className="min-h-48 flex flex-col items-center justify-center text-center">
@@ -33,16 +36,18 @@ function ChamaList({ chamas, loading, error }) {
             </div>
         );
     }
+
     return (
         <div className="mt-6 space-y-4">
             {chamas.map((chama) => (
-                <div
+                <Link
                     key={chama.chama_id}
-                    className="border border-slate-100 rounded-xl p-5 hover:border-powder transition"
+                    to={`/dashboard/chamas/${chama.chama_id}`}
+                    className="block border border-slate-100 rounded-xl p-5 hover:border-powder hover:shadow-sm transition group"
                 >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-start justify-between gap-4">
                         <div>
-                            <h4 className="font-bold text-ink text-lg">
+                            <h4 className="font-bold text-ink text-lg group-hover:text-orange transition">
                                 {chama.name}
                             </h4>
 
@@ -50,47 +55,34 @@ function ChamaList({ chamas, loading, error }) {
                                 {chama.description || "No description provided."}
                             </p>
                         </div>
-                        
-                    <div className="flex items-center gap-3">
-                        <span className="bg-orange-light text-orange text-xs font-semibold px-3 py-2 rounded-full w-fit">
+
+                        <ArrowRight
+                            size={20}
+                            className="text-muted group-hover:text-orange group-hover:translate-x-1 transition"
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 mt-5">
+                        <span className="bg-orange-light text-orange text-xs font-semibold px-3 py-2 rounded-full">
                             {chama.my_role?.replaceAll("_", " ")}
                         </span>
 
-                        <Link
-                            to={`/dashboard/chamas/${chama.chama_id}/invitations`}
-                            className="flex items-center gap-2 bg-powder-light text-ink text-sm font-semibold px-3 py-2 rounded-lg hover:bg-powder transition"
-                        >
-                            <UserPlus size={16} />
-                            Manage Invitations
-                        </Link>
-                        <Link
-                            to={`/dashboard/chamas/${chama.chama_id}/members`}
-                            className="flex items-center gap-2 bg-powder-light text-ink text-sm font-semibold px-3 py-2 rounded-lg hover:bg-powder transition"
-                        >
-                            <Users size={16} />
-                            Members
-                        </Link>                        
-                    </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-5 mt-5 pt-4 border-t border-slate-100 text-sm">
-                        <div className="flex items-center gap-2 text-muted">
+                        <div className="flex items-center gap-2 text-sm text-muted">
                             <Users size={17} />
                             <span>{chama.member_count} members</span>
                         </div>
-
-                        <div className="text-muted">
-                            Created by:{" "}
-                            <span className="font-medium text-ink">
-                                {chama.created_by_username}
-                            </span>
-                        </div>
                     </div>
-                </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-100 text-sm text-muted">
+                        Created by:{" "}
+                        <span className="font-medium text-ink">
+                            {chama.created_by_username}
+                        </span>
+                    </div>
+                </Link>
             ))}
         </div>
     );
 }
 
 export default ChamaList;
-
