@@ -6,6 +6,11 @@ function usePendingPayments(chamaId) {
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const refreshPayments = () => {
+        setRefreshKey((previous) => previous + 1);
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -50,9 +55,14 @@ function usePendingPayments(chamaId) {
         return () => {
             isMounted = false;
         };
-    }, [chamaId]);
+    }, [chamaId, refreshKey]);
 
-    return { payments, loading, error };
+    return {
+        payments,
+        loading,
+        error,
+        refreshPayments,
+    };
 }
 
 export default usePendingPayments;
