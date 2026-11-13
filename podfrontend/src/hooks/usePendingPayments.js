@@ -1,18 +1,32 @@
+
 import { useEffect, useState } from "react";
 import { getPendingPayments } from "../api/payments";
 
-function usePendingPayments() {
+function usePendingPayments(chamaId) {
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
     useEffect(() => {
         let isMounted = true;
+
         const fetchPayments = async () => {
+            if (!chamaId) {
+                setPayments([]);
+                setLoading(false);
+                setError("");
+                return;
+            }
+
+            setLoading(true);
+
             try {
-                const data = await getPendingPayments();
+                const data = await getPendingPayments(chamaId);
+
                 const paymentList = Array.isArray(data)
                     ? data
                     : data?.results || [];
+
                 if (isMounted) {
                     setPayments(paymentList);
                     setError("");
@@ -30,11 +44,14 @@ function usePendingPayments() {
                 }
             }
         };
+
         fetchPayments();
+
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [chamaId]);
+
     return { payments, loading, error };
 }
 

@@ -20,7 +20,7 @@ function DashboardOverview() {
     const {chamas,loading: chamasLoading, error: chamasError, } = useChamas();  
     const { cycles } = useCycles();
     const { contributions } = useContributions();
-    const { payments } = usePendingPayments();
+    const { payments, loading, error } = usePendingPayments(selectedTreasurerChama?.chama_id);
     const [selectedTreasurerChamaId, setSelectedTreasurerChamaId] = useState("");
 
 const treasurerChamas = chamas.filter(

@@ -420,7 +420,7 @@ class PayoutViewSet(
         chama_id = _uuid_param(self.request, "chama")
         if chama_id:
             queryset = queryset.filter(
-                round__cycle__chama_id=chama_id
+            round__cycle__chama_id=chama_id
             )
         return queryset
 
