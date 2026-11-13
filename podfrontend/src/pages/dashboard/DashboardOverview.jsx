@@ -6,7 +6,7 @@ import {
     HandCoins,
     Bell,
 } from "lucide-react";
-
+import { useState } from "react";
 import useChamas from "../../hooks/useChamas";
 import useCycles from "../../hooks/useCycles";
 import useContributions from "../../hooks/useContributions";
@@ -17,16 +17,20 @@ import ChamaList from "../chamas/ChamaList";
 function DashboardOverview() {
     const { user } = useOutletContext();
 
-    const {
-        chamas,
-        loading: chamasLoading,
-        error: chamasError,
-    } = useChamas();
-
+    const {chamas,loading: chamasLoading, error: chamasError, } = useChamas();  
     const { cycles } = useCycles();
     const { contributions } = useContributions();
     const { payments } = usePendingPayments();
+    const [selectedTreasurerChamaId, setSelectedTreasurerChamaId] = useState("");
 
+const treasurerChamas = chamas.filter(
+    (chama) => chama.my_role === "treasurer"
+    );
+    const selectedTreasurerChama =
+        treasurerChamas.find(
+            (chama) => chama.chama_id === selectedTreasurerChamaId
+        ) || treasurerChamas[0];
+        
     const summaryCards = [
         {
             title: "My Chamas",
@@ -105,7 +109,59 @@ function DashboardOverview() {
         );
     })}
 </section>
+        {/* Treasurer Dashboard */}
+        {!chamasLoading && treasurerChamas.length > 0 && (
+            <section className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-ink">
+                            Treasurer 
+                        </h2>
 
+                        <p className="text-sm text-muted mt-1">
+                            Select a chama to manage its financial activities.
+                        </p>
+                    </div>
+
+                    <div className="w-full sm:w-72">
+                        <label
+                            htmlFor="treasurer-chama"
+                            className="block text-sm font-medium text-ink mb-2"
+                        >
+                            Select Chama
+                        </label>
+
+                        <select
+                            id="treasurer-chama"
+                            value={selectedTreasurerChama?.chama_id || ""}
+                            onChange={(e) => setSelectedTreasurerChamaId(e.target.value)}
+                            className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-orange"
+                        >
+                            {treasurerChamas.map((chama) => (
+                                <option
+                                    key={chama.chama_id}
+                                    value={chama.chama_id}
+                                >
+                                    {chama.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {selectedTreasurerChama && (
+                    <div className="mt-5 p-4 bg-orange-light rounded-lg">
+                        <p className="text-sm text-muted">
+                            Currently managing
+                        </p>
+
+                        <h3 className="text-lg font-semibold text-ink mt-1">
+                            {selectedTreasurerChama.name}
+                        </h3>
+                    </div>
+                )}
+            </section>
+        )}
 
             {/* Main dashboard panels */}
             <section className="grid lg:grid-cols-3 gap-6 items-start">
