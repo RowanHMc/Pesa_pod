@@ -153,7 +153,9 @@ class SavingsCycleViewSet(
         requested = _status_param(self.request, SavingsCycle.Status.values)
         if requested:
             queryset = queryset.filter(status=requested)
+            
         return queryset
+    
 
     def perform_create(self, serializer):
         # The service takes the chama lock, checks the role and the rules.
@@ -303,9 +305,8 @@ class TransactionViewSet(
     lookup_value_regex = UUID_REGEX
 
     ACTION_PERMISSIONS = {
-        "confirm_payment": [IsPayoutRecipient],
-        "reject_payment": [IsPayoutRecipient],
-        "confirm_on_behaf": [IsChairperson],
+        "confirm_payment": [IsTreasurer],
+        "reject_payment": [IsTreasurer],
     }
 
     def get_queryset(self):
@@ -331,6 +332,12 @@ class TransactionViewSet(
         round_id = _uuid_param(self.request, "round")
         if round_id:
             queryset = queryset.filter(contribution__round_id=round_id)
+
+        chama_id = _uuid_param(self.request, "chama")
+        if chama_id:
+            queryset = queryset.filter(
+                contribution__round__cycle__chama_id=chama_id
+            )
         return queryset
 
     def perform_create(self, serializer):
@@ -410,6 +417,11 @@ class PayoutViewSet(
         round_id = _uuid_param(self.request, "round")
         if round_id:
             queryset = queryset.filter(round_id=round_id)
+        chama_id = _uuid_param(self.request, "chama")
+        if chama_id:
+            queryset = queryset.filter(
+                round__cycle__chama_id=chama_id
+            )
         return queryset
 
     def perform_create(self, serializer):
