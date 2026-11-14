@@ -3,9 +3,12 @@ import { useState } from "react";
 import {CheckCircle, XCircle,Clock, Wallet,CalendarDays, AlertTriangle,} from "lucide-react"; 
 import { confirmPayment, rejectPayment,} from "../../api/payments";
 import useTreasurerOverview from "../../hooks/useTreasurerOverview";
+import usePayouts from "../../hooks/usePayouts";
+
 
 function TreasurerDashboard({
     chama,
+    cycle,
     payments,
     loading,
     error,
@@ -16,7 +19,10 @@ function TreasurerDashboard({
     const [rejectionReason, setRejectionReason] = useState("");
     const [actionError, setActionError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-
+    const [payoutMethod, setPayoutMethod] = useState("");
+    const [payoutReference, setPayoutReference] = useState("");
+    const [payoutActionError, setPayoutActionError] = useState("");
+    const [payoutSuccess, setPayoutSuccess] = useState("");
     const paymentList = Array.isArray(payments) ? payments : [];
 
     const {
@@ -27,7 +33,15 @@ function TreasurerDashboard({
         overdueCount,
         loading: overviewLoading,
         error: overviewError,
-    } = useTreasurerOverview(chama?.active_cycle);
+    } = useTreasurerOverview(chama?.cycle);
+
+    const {
+        payouts,
+        loading: payoutsLoading,
+        submitting,
+        error: payoutsError,
+        createPayout,
+    } = usePayouts(chama?.chama_id);
 
     const formatAmount = (amount) => {
         return new Intl.NumberFormat("en-KE", {
@@ -122,6 +136,41 @@ function TreasurerDashboard({
             setProcessingId(null);
         }
     };
+
+const handleRecordPayout = async (event) => {
+    event.preventDefault();
+
+    if (!round?.id) {
+        setPayoutActionError("No current savings round is available.");
+        return;
+    }
+
+    if (!payoutMethod.trim() || !payoutReference.trim()) {
+        setPayoutActionError("Please provide the payment method and reference.");
+        return;
+    }
+
+    setPayoutActionError("");
+    setPayoutSuccess("");
+
+    try {
+        await createPayout(
+            round.id,
+            payoutMethod.trim(),
+            payoutReference.trim()
+        );
+
+        setPayoutSuccess("Payout recorded successfully.");
+        setPayoutMethod("");
+        setPayoutReference("");
+    } catch (error) {
+        setPayoutActionError(
+            error.response?.data?.detail ||
+            "Unable to record payout. Please try again."
+        );
+    }
+};
+
 
     return (
         <div className="space-y-8">
@@ -560,6 +609,164 @@ function TreasurerDashboard({
                     </div>
                 )}
             </section>
+
+{/* Payout Management */}
+<section className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
+    <div className="mb-5">
+        <h2 className="text-lg font-semibold text-slate-800">
+            Payout Management
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">
+            Record payouts and track their confirmation by recipients.
+        </p>
+    </div>
+
+    {payoutActionError && (
+        <p className="bg-red-50 text-red-700 p-3 rounded-lg text-sm mb-4">
+            {payoutActionError}
+        </p>
+    )}
+
+    {payoutsError && (
+        <p className="text-red-600 text-sm mb-4">
+            {payoutsError}
+        </p>
+    )}
+
+    {payoutSuccess && (
+        <p className="bg-green-50 text-green-700 p-3 rounded-lg text-sm mb-4">
+            {payoutSuccess}
+        </p>
+    )}
+
+    {/* Record Payout Form */}
+    <div className="border border-slate-100 rounded-lg p-4 mb-6">
+        <h3 className="font-semibold text-slate-800 mb-3">
+            Record New Payout
+        </h3>
+
+        {round ? (
+            <form onSubmit={handleRecordPayout} className="space-y-4">
+                <div>
+                    <p className="text-sm text-slate-500">
+                        Current round
+                    </p>
+                    <p className="font-medium text-slate-800">
+                        Round {round.round_number} — {round.recipient_username}
+                    </p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Payment Method
+                    </label>
+                    <input
+                        type="text"
+                        value={payoutMethod}
+                        onChange={(event) => setPayoutMethod(event.target.value)}
+                        placeholder="e.g. M-Pesa, Bank Transfer"
+                        className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Payment Reference
+                    </label>
+                    <input
+                        type="text"
+                        value={payoutReference}
+                        onChange={(event) => setPayoutReference(event.target.value)}
+                        placeholder="Enter transaction reference"
+                        className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
+                >
+                    {submitting ? "Recording..." : "Record Payout"}
+                </button>
+            </form>
+        ) : (
+            <p className="text-sm text-slate-500">
+                A savings round is required before recording a payout.
+            </p>
+        )}
+    </div>
+
+    {/* Payout History */}
+    <div>
+        <h3 className="font-semibold text-slate-800 mb-4">
+            Payout History
+        </h3>
+
+        {payoutsLoading ? (
+            <p className="text-sm text-slate-500">
+                Loading payout records...
+            </p>
+        ) : payouts.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-6">
+                No payouts have been recorded for this chama.
+            </p>
+        ) : (
+            <div className="space-y-3">
+                {payouts.map((payout) => (
+                    <div
+                        key={payout.id}
+                        className="border border-slate-100 rounded-lg p-4"
+                    >
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+                            <div>
+                                <h4 className="font-semibold text-slate-800">
+                                    Round {payout.round_number}
+                                </h4>
+
+                                <p className="text-sm text-slate-500 mt-1">
+                                    Recipient: {payout.recipient_username}
+                                </p>
+
+                                <p className="text-sm text-slate-500">
+                                    {payout.method} · {payout.reference}
+                                </p>
+
+                                <p className="text-xs text-slate-400 mt-1">
+                                    Recorded: {formatDateTime(payout.created_at)}
+                                </p>
+                            </div>
+
+                            <div className="sm:text-right">
+                                <p className="text-lg font-bold text-slate-800">
+                                    {formatAmount(payout.amount)}
+                                </p>
+
+                                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                                    payout.status === "confirmed"
+                                        ? "bg-green-100 text-green-700"
+                                        : payout.status === "rejected"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-amber-100 text-amber-700"
+                                }`}>
+                                    {payout.status}
+                                </span>
+                            </div>
+                        </div>
+
+                        {payout.rejection_reason && (
+                            <p className="text-sm text-red-600 mt-3">
+                                Rejection reason: {payout.rejection_reason}
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+</section>
 
         </div>
     );
