@@ -5,10 +5,12 @@ import useChamaMembers from "../../hooks/useChamaMembers";
 import useChamaInvitations from "../../hooks/useChamaInvitations";
 import { removeChamaMember, appointTreasurer,removeTreasurer,transferChair,} from "../../api/chamas";
 import { proposeInvitation,reviewInvitation, cancelInvitation,} from "../../api/invitations";
-   
+import useChamaCycles from "../../hooks/useChamaCycles";
+import { createSavingsCycle, activateSavingsCycle, cancelSavingsCycle } from "../../api/cycles";
 
 function ChairpersonDashboard({ chama, cycle }) {
     const chamaId = chama?.chama_id;
+    const {cycles, loading: cyclesLoading, error: cyclesError, refetch: refetchCycles} = useChamaCycles(chamaId);
     const { chama: chamaDetails } = useChama(chamaId);
     const {members, loading: membersLoading, error: membersError, refetch: refreshMembers,} = useChamaMembers(chamaId, true);   
     const {invitations, loading: invitationsLoading, error: invitationsError, refetch: refreshInvitations,} = useChamaInvitations(chamaId, "open");
@@ -19,6 +21,14 @@ function ChairpersonDashboard({ chama, cycle }) {
     const [busyAction, setBusyAction] = useState("");
     const [actionError, setActionError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+    const [contributionAmount, setContributionAmount] = useState("");
+    const [frequency, setFrequency] = useState("weekly");
+    const [startDate, setStartDate] = useState("");
+    const [cycleSubmitting, setCycleSubmitting] = useState(false);
+
+    const currentCycle = cycles.find(
+    (item) => item.status === "draft" || item.status === "active"
+    );
     const displayChama = chamaDetails || chama;
 
     const activeMembers = members.filter(
@@ -169,7 +179,94 @@ function ChairpersonDashboard({ chama, cycle }) {
 
     const getMembershipId = (member) =>
         member.membership_id;
+    
+    const handleCreateCycle = async (event) => {
+    event.preventDefault();
 
+    if (!chamaId) return;
+
+    setCycleSubmitting(true);
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+        await createSavingsCycle({
+            chama: chamaId,
+            contribution_amount: contributionAmount,
+            frequency,
+            start_date: startDate,
+        });
+
+        setContributionAmount("");
+        setFrequency("weekly");
+        setStartDate("");
+
+        setSuccessMessage("Savings cycle draft created successfully.");
+        await refetchCycles();
+    } catch (error) {
+        setActionError(
+            error.response?.data?.detail ||
+            "Unable to create the savings cycle. Please check the details."
+        );
+    } finally {
+        setCycleSubmitting(false);
+    }
+};
+    const handleActivateCycle = async () => {
+        if (!currentCycle) return;
+
+    const confirmed = window.confirm(
+        "Are you sure you want to activate this savings cycle? This will generate the payout schedule and first round."
+    );
+
+    if (!confirmed) return;
+
+    setCycleSubmitting(true);
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+        await activateSavingsCycle(currentCycle.id);
+
+        setSuccessMessage("Savings cycle activated successfully.");
+        await refetchCycles();
+    } catch (error) {
+        setActionError(
+            error.response?.data?.detail ||
+            "Unable to activate the savings cycle."
+        );
+    } finally {
+        setCycleSubmitting(false);
+    }
+};
+
+    const handleCancelCycle = async () => {
+        if (!currentCycle) return;
+
+    const confirmed = window.confirm(
+        "Are you sure you want to cancel this savings cycle?"
+    );
+
+    if (!confirmed) return;
+
+    setCycleSubmitting(true);
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+        await cancelSavingsCycle(currentCycle.id);
+
+        setSuccessMessage("Savings cycle cancelled successfully.");
+        await refetchCycles();
+    } catch (error) {
+        setActionError(
+            error.response?.data?.detail ||
+            "Unable to cancel the savings cycle."
+        );
+    } finally {
+        setCycleSubmitting(false);
+    }
+};
     return (
         <section className="space-y-8">
 
@@ -247,7 +344,178 @@ function ChairpersonDashboard({ chama, cycle }) {
                     </div>
                 </div>
             </div>
+            {/* Savings Cycle Management */}
+            <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                            Savings Cycle Management
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Create and manage your chama's savings cycles.
+                        </p>
+                    </div>
+                </div>
 
+                {cyclesLoading ? (
+                    <p className="text-sm text-gray-500">
+                        Loading savings cycles...
+                    </p>
+                ) : cyclesError ? (
+                    <p className="text-sm text-red-600">{cyclesError}</p>
+                ) : currentCycle ? (
+                    <div className="border border-gray-200 rounded-lg p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <div>
+                                <h3 className="font-semibold text-gray-800">
+                                    Current Savings Cycle
+                                </h3>
+                                <span
+                                    className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
+                                        currentCycle.status === "active"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-yellow-100 text-yellow-700"
+                                    }`}
+                                >
+                                    {currentCycle.status.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Contribution per member
+                                </p>
+                                <p className="font-semibold text-gray-800">
+                                    KSh {Number(currentCycle.contribution_amount).toLocaleString()}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Frequency
+                                </p>
+                                <p className="font-semibold text-gray-800 capitalize">
+                                    {currentCycle.frequency}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Start date
+                                </p>
+                                <p className="font-semibold text-gray-800">
+                                    {currentCycle.start_date}
+                                </p>
+                            </div>
+                        </div>
+
+                        {currentCycle.status === "draft" && (
+                            <div className="flex flex-wrap gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={handleActivateCycle}
+                                    disabled={cycleSubmitting}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                >
+                                    {cycleSubmitting ? "Processing..." : "Activate Cycle"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleCancelCycle}
+                                    disabled={cycleSubmitting}
+                                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
+                                >
+                                    Cancel Draft
+                                </button>
+                            </div>
+                        )}
+
+                        {currentCycle.status === "active" && (
+                            <div className="mt-5">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    This cycle is active. Its payout schedule and rounds
+                                    are now being managed.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={handleCancelCycle}
+                                    disabled={cycleSubmitting}
+                                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
+                                >
+                                    {cycleSubmitting ? "Processing..." : "Cancel Cycle"}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <form onSubmit={handleCreateCycle} className="space-y-5">
+                        <p className="text-sm text-gray-600">
+                            There is no unfinished savings cycle for this chama.
+                            Create a draft to begin setting up the next cycle.
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Contribution Amount (KSh)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    required
+                                    value={contributionAmount}
+                                    onChange={(event) =>
+                                        setContributionAmount(event.target.value)
+                                    }
+                                    placeholder="e.g. 1000"
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Contribution Frequency
+                                </label>
+                                <select
+                                    value={frequency}
+                                    onChange={(event) => setFrequency(event.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Start Date
+                                </label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={startDate}
+                                    onChange={(event) => setStartDate(event.target.value)}
+                                    min={new Date().toLocaleDateString("en-CA")}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={cycleSubmitting}
+                            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {cycleSubmitting ? "Creating..." : "Create Savings Cycle"}
+                        </button>
+                    </form>
+                )}
+            </section>
             {/* Member management */}
             <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
