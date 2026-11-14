@@ -1,95 +1,50 @@
-
 import { useState } from "react";
-import {
-    Users,
-    UserPlus,
-    ShieldCheck,
-    Crown,
-    RefreshCw,
-    UserMinus,
-    CheckCircle,
-    XCircle,
-    Clock,
-    Send,
-    ArrowRightLeft,
-} from "lucide-react";
-
+import {Users,UserPlus,ShieldCheck,Crown, RefreshCw,UserMinus,CheckCircle, XCircle,Clock, Send,ArrowRightLeft,} from "lucide-react";
 import useChama from "../../hooks/useChama";
 import useChamaMembers from "../../hooks/useChamaMembers";
 import useChamaInvitations from "../../hooks/useChamaInvitations";
+import { removeChamaMember, appointTreasurer,removeTreasurer,transferChair,} from "../../api/chamas";
+import { proposeInvitation,reviewInvitation, cancelInvitation,} from "../../api/invitations";
 
-import {
-    removeChamaMember,
-    appointTreasurer,
-    removeTreasurer,
-    transferChair,
-} from "../../api/chamas";
+   
 
-import {
-    proposeInvitation,
-    reviewInvitation,
-    cancelInvitation,
-} from "../../api/invitations";
 
 function ChairpersonDashboard({ chama, cycle }) {
     const chamaId = chama?.chama_id;
-
     const { chama: chamaDetails } = useChama(chamaId);
-
-    const {
-        members,
-        loading: membersLoading,
-        error: membersError,
-        refetch: refreshMembers,
-    } = useChamaMembers(chamaId, false);
-
-    const {
-        invitations,
-        loading: invitationsLoading,
-        error: invitationsError,
-        refetch: refreshInvitations,
-    } = useChamaInvitations(chamaId, "open");
-
+    const {members, loading: membersLoading, error: membersError, refetch: refreshMembers,} = useChamaMembers(chamaId, true);   
+    const {invitations, loading: invitationsLoading, error: invitationsError, refetch: refreshInvitations,} = useChamaInvitations(chamaId, "open");
     const [username, setUsername] = useState("");
     const [selectedTreasurer, setSelectedTreasurer] = useState("");
     const [selectedChair, setSelectedChair] = useState("");
-
     const [showFormerMembers, setShowFormerMembers] = useState(false);
-
     const [busyAction, setBusyAction] = useState("");
     const [actionError, setActionError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-
     const displayChama = chamaDetails || chama;
 
     const activeMembers = members.filter(
         (member) => member.is_active
     );
-
     const formerMembers = members.filter(
         (member) => !member.is_active
     );
-
     const currentTreasurer = activeMembers.find(
         (member) => member.role === "treasurer"
     );
-
     const eligibleMembers = activeMembers.filter(
         (member) =>
             member.role !== "chairperson"
     );
-
     const transferCandidates = activeMembers.filter(
         (member) => member.role !== "chairperson"
     );
-
     const formatError = (error, fallback) => {
         const data = error.response?.data;
 
         if (typeof data?.detail === "string") {
             return data.detail;
         }
-
         if (typeof data === "object" && data !== null) {
             const firstError = Object.values(data).flat()[0];
 
@@ -105,12 +60,9 @@ function ChairpersonDashboard({ chama, cycle }) {
         setBusyAction(actionName);
         setActionError("");
         setSuccessMessage("");
-
         try {
             await action();
-
             setSuccessMessage(successText);
-
             await refreshMembers();
             await refreshInvitations();
         } catch (error) {
@@ -155,7 +107,6 @@ function ChairpersonDashboard({ chama, cycle }) {
             "Invitation cancelled successfully."
         );
     };
-
     const handleRemoveMember = (membershipId) => {
         runAction(
             `remove-${membershipId}`,
