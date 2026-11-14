@@ -21,3 +21,37 @@ export const getChamaMembers = async (chamaId, includeLeft = false) => {
     });
     return response.data;
 };
+
+// Remove a member.
+export const removeChamaMember = async (chamaId, membershipId) => {
+    const response = await api.post(
+        `chamas/${chamaId}/members/${membershipId}/remove/`
+    );
+    return response.data;
+};
+
+// Appoint a Treasurer.
+export const appointTreasurer = async (chamaId, membershipId) => {
+    const response = await api.post(
+        `chamas/${chamaId}/appoint-treasurer/`,
+        { membership_id: membershipId }
+    );
+    return response.data;
+};
+
+// Remove the current Treasurer.
+export const removeTreasurer = async (chamaId) => {
+    const response = await api.post(
+        `chamas/${chamaId}/remove-treasurer/`
+    );
+    return response.data;
+};
+
+// Transfer Chairperson responsibilities.
+export const transferChair = async (chamaId, membershipId) => {
+    const response = await api.post(
+        `chamas/${chamaId}/transfer-chair/`,
+        { membership_id: membershipId }
+    );
+    return response.data;
+};
