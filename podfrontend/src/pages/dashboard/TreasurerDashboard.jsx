@@ -42,7 +42,29 @@ function TreasurerDashboard({
         error: payoutsError,
         createPayout,
     } = usePayouts(chama?.chama_id);
+   
+    const payoutSummary = payouts.reduce(
+    (summary, payout) => {
+        if (payout.status === "confirmed") {
+            summary.confirmed += 1;
+        }
 
+        if (payout.status === "sent") {
+            summary.awaiting += 1;
+        }
+
+        if (payout.status !== "rejected") {
+            summary.totalAmount += Number(payout.amount || 0);
+        }
+
+        return summary;
+    },
+    {
+        confirmed: 0,
+        awaiting: 0,
+        totalAmount: 0,
+    }
+);
     const formatAmount = (amount) => {
         return new Intl.NumberFormat("en-KE", {
             style: "currency",
@@ -611,40 +633,29 @@ const handleRecordPayout = async (event) => {
             </section>
 
 {/* Payout Management */}
-<section className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
+<section className="bg-white border border-slate-100 rounded-xl mb-8 p-6 shadow-sm">
     <div className="mb-5">
         <h2 className="text-lg font-semibold text-slate-800">
             Payout Management
         </h2>
-        <p className="text-sm text-slate-500 mt-1">
-            Record payouts and track their confirmation by recipients.
-        </p>
     </div>
-
     {payoutActionError && (
         <p className="bg-red-50 text-red-700 p-3 rounded-lg text-sm mb-4">
             {payoutActionError}
         </p>
     )}
-
     {payoutsError && (
         <p className="text-red-600 text-sm mb-4">
             {payoutsError}
         </p>
     )}
-
     {payoutSuccess && (
         <p className="bg-green-50 text-green-700 p-3 rounded-lg text-sm mb-4">
             {payoutSuccess}
         </p>
     )}
-
     {/* Record Payout Form */}
     <div className="border border-slate-100 rounded-lg p-4 mb-6">
-        <h3 className="font-semibold text-slate-800 mb-3">
-            Record New Payout
-        </h3>
-
         {round ? (
             <form onSubmit={handleRecordPayout} className="space-y-4">
                 <div>
@@ -698,7 +709,56 @@ const handleRecordPayout = async (event) => {
             </p>
         )}
     </div>
+        {/* Payout Summary */}
+<div>
+    <h3 className="font-semibold text-slate-800 mb-4">
+        Payout Summary
+    </h3>
 
+    {payoutsLoading ? (
+        <p className="text-sm text-slate-500">
+            Loading payout summary...
+        </p>
+    ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm text-slate-500">
+                    Payouts Recorded
+                </p>
+                <p className="text-2xl font-bold text-slate-800 mt-2">
+                    {payouts.length}
+                </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm text-slate-500">
+                    Total Payout Value
+                </p>
+                <p className="text-xl font-bold text-slate-800 mt-2">
+                    {formatAmount(payoutSummary.totalAmount)}
+                </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm text-slate-500">
+                    Confirmed Payouts
+                </p>
+                <p className="text-2xl font-bold text-green-600 mt-2">
+                    {payoutSummary.confirmed}
+                </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm text-slate-500">
+                    Awaiting Confirmation
+                </p>
+                <p className="text-2xl font-bold text-amber-600 mt-2">
+                    {payoutSummary.awaiting}
+                </p>
+            </div>
+        </div>
+    )}
+</div>
     {/* Payout History */}
     <div>
         <h3 className="font-semibold text-slate-800 mb-4">
