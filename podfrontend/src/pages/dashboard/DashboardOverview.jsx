@@ -30,7 +30,10 @@ function DashboardOverview() {
         treasurerChamas.find(
             (chama) => chama.chama_id === selectedTreasurerChamaId
         ) || treasurerChamas[0];
-
+    
+    const selectedTreasurerCycle = cycles.find(
+        (cycle) => cycle.chama === selectedTreasurerChama?.chama_id
+    )
     const { payments, loading, error, refreshPayments } = usePendingPayments(selectedTreasurerChama?.chama_id);
 
     const summaryCards = [
@@ -168,6 +171,7 @@ function DashboardOverview() {
         {selectedTreasurerChama && (
             <TreasurerDashboard
                 chama={selectedTreasurerChama}
+                cycle={selectedTreasurerCycle}
                 payments={payments}
                 loading={loading}
                 error={error}
