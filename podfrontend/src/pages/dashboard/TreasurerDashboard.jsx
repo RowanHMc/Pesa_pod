@@ -1,20 +1,7 @@
 
 import { useState } from "react";
-import {
-    CheckCircle,
-    XCircle,
-    Clock,
-    Wallet,
-    Users,
-    CalendarDays,
-    AlertTriangle,
-} from "lucide-react";
-
-import {
-    confirmPayment,
-    rejectPayment,
-} from "../../api/payments";
-
+import {CheckCircle, XCircle,Clock, Wallet,CalendarDays, AlertTriangle,} from "lucide-react"; 
+import { confirmPayment, rejectPayment,} from "../../api/payments";
 import useTreasurerOverview from "../../hooks/useTreasurerOverview";
 
 function TreasurerDashboard({
@@ -29,6 +16,8 @@ function TreasurerDashboard({
     const [rejectionReason, setRejectionReason] = useState("");
     const [actionError, setActionError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+
+    const paymentList = Array.isArray(payments) ? payments : [];
 
     const {
         round,
@@ -62,6 +51,21 @@ function TreasurerDashboard({
             dateStyle: "medium",
             timeStyle: "short",
         });
+    };
+
+    const isOverdue = (contribution) => {
+        if (!round?.due_date || contribution.status === "paid") {
+            return false;
+        }
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+
+        const todayString = `${year}-${month}-${day}`;
+
+        return round.due_date < todayString;
     };
 
     const handleConfirm = async (paymentId) => {
@@ -184,7 +188,7 @@ function TreasurerDashboard({
                         </div>
 
                         <p className="text-2xl font-bold text-slate-800 mt-3">
-                            {loading ? "Loading..." : payments.length}
+                            {loading ? "Loading..." : paymentList.length}
                         </p>
                     </div>
 
@@ -225,6 +229,7 @@ function TreasurerDashboard({
                             <p className="text-sm text-slate-500">
                                 Round
                             </p>
+
                             <p className="font-semibold text-slate-800 mt-1">
                                 {round.round_number}
                             </p>
@@ -234,6 +239,7 @@ function TreasurerDashboard({
                             <p className="text-sm text-slate-500">
                                 Recipient
                             </p>
+
                             <p className="font-semibold text-slate-800 mt-1">
                                 {round.recipient_username || "Not assigned"}
                             </p>
@@ -243,6 +249,7 @@ function TreasurerDashboard({
                             <p className="text-sm text-slate-500">
                                 Due Date
                             </p>
+
                             <p className="font-semibold text-slate-800 mt-1">
                                 {formatDate(round.due_date)}
                             </p>
@@ -252,6 +259,7 @@ function TreasurerDashboard({
                             <p className="text-sm text-slate-500">
                                 Round Status
                             </p>
+
                             <p className="font-semibold text-slate-800 mt-1 capitalize">
                                 {round.status}
                             </p>
@@ -261,6 +269,7 @@ function TreasurerDashboard({
                             <p className="text-sm text-slate-500">
                                 Confirmed Contributions
                             </p>
+
                             <p className="font-semibold text-slate-800 mt-1">
                                 {round.paid_count} / {round.contribution_count}
                             </p>
@@ -270,6 +279,7 @@ function TreasurerDashboard({
                             <p className="text-sm text-slate-500">
                                 Payout Status
                             </p>
+
                             <p className="font-semibold text-slate-800 mt-1 capitalize">
                                 {round.payout_status || "Pending"}
                             </p>
@@ -296,7 +306,7 @@ function TreasurerDashboard({
                     </div>
 
                     <span className="bg-amber-100 text-amber-700 text-sm font-medium px-3 py-1 rounded-full">
-                        {payments.length} Pending
+                        {paymentList.length} Pending
                     </span>
                 </div>
 
@@ -320,7 +330,7 @@ function TreasurerDashboard({
                     <p className="text-sm text-red-600">
                         {error}
                     </p>
-                ) : payments.length === 0 ? (
+                ) : paymentList.length === 0 ? (
                     <div className="text-center py-8">
                         <CheckCircle
                             size={35}
@@ -337,7 +347,7 @@ function TreasurerDashboard({
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {payments.map((payment) => (
+                        {paymentList.map((payment) => (
                             <div
                                 key={payment.id}
                                 className="border border-slate-100 rounded-lg p-4"
@@ -412,6 +422,7 @@ function TreasurerDashboard({
                                                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg"
                                             >
                                                 <XCircle size={16} />
+
                                                 {processingId === payment.id
                                                     ? "Processing..."
                                                     : "Submit Rejection"}
@@ -450,25 +461,104 @@ function TreasurerDashboard({
                 )}
             </section>
 
-            {/* Member Contribution Tracking - Next Implementation */}
+            {/* Member Contribution Tracking */}
             <section className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-2">
-                    <Users size={22} className="text-blue-600" />
-
+                <div className="mb-5">
                     <h2 className="text-lg font-semibold text-slate-800">
                         Member Contribution Tracking
                     </h2>
+
+                    <p className="text-sm text-slate-500 mt-1">
+                        Track contributions for the current savings round.
+                    </p>
                 </div>
 
-                <p className="text-sm text-slate-500">
-                    Member-by-member contribution records will appear here.
-                </p>
+                {overviewLoading ? (
+                    <p className="text-sm text-slate-500">
+                        Loading member contributions...
+                    </p>
+                ) : overviewError ? (
+                    <p className="text-sm text-red-600">
+                        Unable to load member contributions.
+                    </p>
+                ) : contributions.length === 0 ? (
+                    <p className="text-sm text-slate-500 py-6 text-center">
+                        No contribution records available for this round.
+                    </p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead>
+                                <tr className="border-b border-slate-100 text-slate-500">
+                                    <th className="py-3 pr-4 font-medium">
+                                        Member
+                                    </th>
 
-                <p className="text-sm text-slate-400 mt-2">
-                    {overviewLoading
-                        ? "Loading contribution records..."
-                        : `${contributions.length} contribution records available.`}
-                </p>
+                                    <th className="py-3 px-4 font-medium">
+                                        Amount Due
+                                    </th>
+
+                                    <th className="py-3 px-4 font-medium">
+                                        Penalty
+                                    </th>
+
+                                    <th className="py-3 px-4 font-medium">
+                                        Total Due
+                                    </th>
+
+                                    <th className="py-3 pl-4 font-medium">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {contributions.map((contribution) => {
+                                    const overdue = isOverdue(contribution);
+
+                                    return (
+                                        <tr
+                                            key={contribution.id}
+                                            className="border-b border-slate-50 last:border-0"
+                                        >
+                                            <td className="py-4 pr-4 font-medium text-slate-800">
+                                                {contribution.member_username}
+                                            </td>
+
+                                            <td className="py-4 px-4 text-slate-600">
+                                                {formatAmount(contribution.amount_due)}
+                                            </td>
+
+                                            <td className="py-4 px-4 text-slate-600">
+                                                {formatAmount(contribution.penalty_amount)}
+                                            </td>
+
+                                            <td className="py-4 px-4 font-medium text-slate-800">
+                                                {formatAmount(contribution.total_due)}
+                                            </td>
+
+                                            <td className="py-4 pl-4">
+                                                <span
+                                                    className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                                                        contribution.status === "paid"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : overdue
+                                                            ? "bg-red-100 text-red-700"
+                                                            : "bg-amber-100 text-amber-700"
+                                                    }`}
+                                                >
+                                                    {overdue
+                                                        ? "Overdue"
+                                                        : contribution.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </section>
 
         </div>
