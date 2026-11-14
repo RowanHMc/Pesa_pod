@@ -1,4 +1,4 @@
-
+import TreasurerDashboard from "./TreasurerDashboard";
 import { Link, useOutletContext } from "react-router-dom";
 import {
     Users,
@@ -31,8 +31,8 @@ function DashboardOverview() {
             (chama) => chama.chama_id === selectedTreasurerChamaId
         ) || treasurerChamas[0];
 
-    const { payments, loading, error } = usePendingPayments(selectedTreasurerChama?.chama_id);
-        
+    const { payments, loading, error, refreshPayments } = usePendingPayments(selectedTreasurerChama?.chama_id);
+
     const summaryCards = [
         {
             title: "My Chamas",
@@ -164,7 +164,16 @@ function DashboardOverview() {
                 )}
             </section>
         )}
-
+        {/* Treasurer Financial Management */}
+        {selectedTreasurerChama && (
+            <TreasurerDashboard
+                chama={selectedTreasurerChama}
+                payments={payments}
+                loading={loading}
+                error={error}
+                onReviewed={refreshPayments}
+            />
+        )}
             {/* Main dashboard panels */}
             <section className="grid lg:grid-cols-3 gap-6 items-start">
 

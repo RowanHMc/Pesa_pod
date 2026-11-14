@@ -8,3 +8,11 @@ export const getActiveCycles = async () => {
 
     return response.data;
 };
+
+export const getChamaRounds = async (cycleId) => {
+    const response = await api.get(
+        `transactions/cycles/${cycleId}/rounds/`
+    );
+
+    return response.data;
+};
