@@ -5,9 +5,7 @@ import useChamaMembers from "../../hooks/useChamaMembers";
 import useChamaInvitations from "../../hooks/useChamaInvitations";
 import { removeChamaMember, appointTreasurer,removeTreasurer,transferChair,} from "../../api/chamas";
 import { proposeInvitation,reviewInvitation, cancelInvitation,} from "../../api/invitations";
-
    
-
 
 function ChairpersonDashboard({ chama, cycle }) {
     const chamaId = chama?.chama_id;
