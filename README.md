@@ -41,7 +41,7 @@ Pesa Pod contains a Django backend and a React frontend.
 1.  Clone the repository.
 
     ``` bash
-    git clone <repository-url>
+    git clone https://github.com/RowanHMc/Pesa_pod.git
     cd Pesa_Pod
     ```
 
@@ -101,7 +101,9 @@ The backend is deployed on Render:
 -  https://pesa-pod.onrender.com/
 
 ## Future developments 
-
+    In-app notifications
+    Funds Management
+    Escrow For pooling of funds before dispatch
 ## License
 
 See the `LICENSE` file for the project's licensing terms.
