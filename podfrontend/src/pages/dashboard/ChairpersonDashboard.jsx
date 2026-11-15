@@ -9,7 +9,7 @@ import useChamaCycles from "../../hooks/useChamaCycles";
 import { createSavingsCycle, activateSavingsCycle, cancelSavingsCycle } from "../../api/cycles";
 import useSavingsCycle from "../../hooks/useSavingsCycle";
 
-function ChairpersonDashboard({ chama, cycle }) {
+function ChairpersonDashboard({ chama, cycle, onCycleChanged }) {
     const chamaId = chama?.chama_id;
     const {cycles, loading: cyclesLoading, error: cyclesError, refetch: refetchCycles} = useChamaCycles(chamaId);
 
@@ -32,7 +32,8 @@ function ChairpersonDashboard({ chama, cycle }) {
     const [frequency, setFrequency] = useState("weekly");
     const [startDate, setStartDate] = useState("");
     const [cycleSubmitting, setCycleSubmitting] = useState(false);
-
+    const [showCancelReason, setShowCancelReason] = useState(false);
+    const [cancellationReason, setCancellationReason] = useState("");
 
     const displayChama = chamaDetails || chama;
 
@@ -235,6 +236,7 @@ function ChairpersonDashboard({ chama, cycle }) {
 
         setSuccessMessage("Savings cycle activated successfully.");
         await refetchCycles();
+        if (onCycleChanged) await onCycleChanged();
     } catch (error) {
         setActionError(
             error.response?.data?.detail ||
@@ -245,24 +247,33 @@ function ChairpersonDashboard({ chama, cycle }) {
     }
 };
 
-    const handleCancelCycle = async () => {
-        if (!currentCycle) return;
+    const handleCancelCycle = async (event) => {
+    event.preventDefault();
 
-    const confirmed = window.confirm(
-        "Are you sure you want to cancel this savings cycle?"
-    );
+    if (!currentCycle) return;
 
-    if (!confirmed) return;
+    if (!cancellationReason.trim()) {
+        setActionError("A cancellation reason is required.");
+        return;
+    }
 
     setCycleSubmitting(true);
     setActionError("");
     setSuccessMessage("");
 
     try {
-        await cancelSavingsCycle(currentCycle.id);
+        await cancelSavingsCycle(
+            currentCycle.id,
+            cancellationReason.trim()
+        );
 
         setSuccessMessage("Savings cycle cancelled successfully.");
+        setCancellationReason("");
+        setShowCancelReason(false);
+
         await refetchCycles();
+
+        if (onCycleChanged) await onCycleChanged();
     } catch (error) {
         setActionError(
             error.response?.data?.detail ||
@@ -272,649 +283,671 @@ function ChairpersonDashboard({ chama, cycle }) {
         setCycleSubmitting(false);
     }
 };
-    return (
-        <section className="space-y-8">
 
-            {/* Dashboard heading */}
-            <div>
-                <h2 className="text-xl font-bold text-ink">
-                    Chairperson Management
+    
+return (
+    <section className="space-y-8">
+
+        {/* Dashboard heading */}
+        <div>
+            <h2 className="text-xl font-bold text-ink">
+                Chairperson Management
+            </h2>
+            <p className="text-sm text-muted mt-1">
+                Manage members, invitations and leadership for your chama.
+            </p>
+        </div>
+
+        {/* Feedback messages */}
+        {actionError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
+                {actionError}
+            </div>
+        )}
+
+        {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-4 text-sm">
+                {successMessage}
+            </div>
+        )}
+
+        {/* Chama overview */}
+        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-5">
+                <div className="bg-orange-light p-3 rounded-lg">
+                    <Crown className="text-orange" size={23} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-lg text-ink">
+                        {displayChama?.name}
+                    </h3>
+                    <p className="text-sm text-muted">
+                        Chairperson overview
+                    </p>
+                </div>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
+                <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-sm text-muted">Active Members</p>
+                    <p className="text-2xl font-bold text-ink mt-2">
+                        {membersLoading ? "..." : activeMembers.length}
+                    </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-sm text-muted">Former Members</p>
+                    <p className="text-2xl font-bold text-ink mt-2">
+                        {membersLoading ? "..." : formerMembers.length}
+                    </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-sm text-muted">Savings Cycle</p>
+                    <p className="text-lg font-bold text-ink mt-2 capitalize">
+                        {cycle?.status || "No active cycle"}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {/* Savings Cycle Management */}
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+                <h2 className="text-lg font-semibold text-gray-800">
+                    Savings Cycle Management
                 </h2>
-
-                <p className="text-sm text-muted mt-1">
-                    Manage members, invitations and leadership for your chama.
+                <p className="text-sm text-gray-500 mt-1">
+                    Create and manage your chama's savings cycles.
                 </p>
             </div>
 
-            {/* Feedback messages */}
-            {actionError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
-                    {actionError}
-                </div>
-            )}
-
-            {successMessage && (
-                <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-4 text-sm">
-                    {successMessage}
-                </div>
-            )}
-
-            {/* Chama overview */}
-            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="bg-orange-light p-3 rounded-lg">
-                        <Crown className="text-orange" size={23} />
-                    </div>
-
-                    <div>
-                        <h3 className="font-bold text-lg text-ink">
-                            {displayChama?.name}
+            {cyclesLoading ? (
+                <p className="text-sm text-gray-500">
+                    Loading savings cycles...
+                </p>
+            ) : cyclesError ? (
+                <p className="text-sm text-red-600">{cyclesError}</p>
+            ) : currentCycle ? (
+                <div className="border border-gray-200 rounded-lg p-5">
+                    <div className="mb-4">
+                        <h3 className="font-semibold text-gray-800">
+                            Current Savings Cycle
                         </h3>
-
-                        <p className="text-sm text-muted">
-                            Chairperson overview
-                        </p>
-                    </div>
-                </div>
-
-                <div className="grid sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-sm text-muted">
-                            Active Members
-                        </p>
-
-                        <p className="text-2xl font-bold text-ink mt-2">
-                            {membersLoading ? "..." : activeMembers.length}
-                        </p>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-sm text-muted">
-                            Former Members
-                        </p>
-
-                        <p className="text-2xl font-bold text-ink mt-2">
-                            {membersLoading ? "..." : formerMembers.length}
-                        </p>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-sm text-muted">
-                            Savings Cycle
-                        </p>
-
-                        <p className="text-lg font-bold text-ink mt-2 capitalize">
-                            {cycle?.status || "No active cycle"}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            {/* Savings Cycle Management */}
-            <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-800">
-                            Savings Cycle Management
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Create and manage your chama's savings cycles.
-                        </p>
-                    </div>
-                </div>
-
-                {cyclesLoading ? (
-                    <p className="text-sm text-gray-500">
-                        Loading savings cycles...
-                    </p>
-                ) : cyclesError ? (
-                    <p className="text-sm text-red-600">{cyclesError}</p>
-                ) : currentCycle ? (
-                    <div className="border border-gray-200 rounded-lg p-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                            <div>
-                                <h3 className="font-semibold text-gray-800">
-                                    Current Savings Cycle
-                                </h3>
-                                <span
-                                    className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
-                                        currentCycle.status === "active"
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-yellow-100 text-yellow-700"
-                                    }`}
-                                >
-                                    {currentCycle.status.toUpperCase()}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Contribution per member
-                                </p>
-                                <p className="font-semibold text-gray-800">
-                                    KSh {Number(currentCycle.contribution_amount).toLocaleString()}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Frequency
-                                </p>
-                                <p className="font-semibold text-gray-800 capitalize">
-                                    {currentCycle.frequency}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Start date
-                                </p>
-                                <p className="font-semibold text-gray-800">
-                                    {currentCycle.start_date}
-                                </p>
-                            </div>
-                        </div>
-
-                        {currentCycle.status === "draft" && (
-                            <div className="flex flex-wrap gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={handleActivateCycle}
-                                    disabled={cycleSubmitting}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                >
-                                    {cycleSubmitting ? "Processing..." : "Activate Cycle"}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleCancelCycle}
-                                    disabled={cycleSubmitting}
-                                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
-                                >
-                                    Cancel Draft
-                                </button>
-                            </div>
-                        )}
-
-                        {currentCycle.status === "active" && (
-                            <div className="mt-5">
-                                <p className="text-sm text-gray-600 mb-3">
-                                    This cycle is active. Its payout schedule and rounds
-                                    are now being managed.
-                                </p>
-
-                                <button
-                                    type="button"
-                                    onClick={handleCancelCycle}
-                                    disabled={cycleSubmitting}
-                                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
-                                >
-                                    {cycleSubmitting ? "Processing..." : "Cancel Cycle"}
-                                </button>
-                            </div>
-                        )}
-                        {currentCycle.status === "active" && (
-    <div className="mt-7 border-t border-gray-200 pt-6">
-        <h3 className="font-semibold text-gray-800 mb-4">
-            Payout Schedule
-        </h3>
-
-        {cycleDetailsLoading ? (
-            <p className="text-sm text-gray-500">
-                Loading payout schedule...
-            </p>
-        ) : cycleDetailsError ? (
-            <p className="text-sm text-red-600">
-                {cycleDetailsError}
-            </p>
-        ) : (
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead>
-                        <tr className="border-b border-gray-200 text-gray-500">
-                            <th className="py-3 pr-4">Round</th>
-                            <th className="py-3 pr-4">Recipient</th>
-                            <th className="py-3 pr-4">Due Date</th>
-                            <th className="py-3 pr-4">Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {(cycleDetails?.payout_schedule || []).map((item) => (
-                            <tr
-                                key={item.round_number}
-                                className="border-b border-gray-100"
-                            >
-                                <td className="py-3 pr-4 font-medium">
-                                    Round {item.round_number}
-                                </td>
-
-                                <td className="py-3 pr-4">
-                                    {item.username}
-                                </td>
-
-                                <td className="py-3 pr-4">
-                                    {item.due_date}
-                                </td>
-
-                                <td className="py-3 pr-4">
-                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 capitalize">
-                                        {item.round_status}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                {(!cycleDetails?.payout_schedule ||
-                    cycleDetails.payout_schedule.length === 0) && (
-                    <p className="text-sm text-gray-500 py-5 text-center">
-                        No payout schedule is available.
-                    </p>
-                )}
-            </div>
-        )}
-    </div>
-)}
-                      </div>
-                ) : (
-                    <form onSubmit={handleCreateCycle} className="space-y-5">
-                        <p className="text-sm text-gray-600">
-                            There is no unfinished savings cycle for this chama.
-                            Create a draft to begin setting up the next cycle.
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contribution Amount (KSh)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
-                                    required
-                                    value={contributionAmount}
-                                    onChange={(event) =>
-                                        setContributionAmount(event.target.value)
-                                    }
-                                    placeholder="e.g. 1000"
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contribution Frequency
-                                </label>
-                                <select
-                                    value={frequency}
-                                    onChange={(event) => setFrequency(event.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Start Date
-                                </label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={startDate}
-                                    onChange={(event) => setStartDate(event.target.value)}
-                                    min={new Date().toLocaleDateString("en-CA")}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={cycleSubmitting}
-                            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        <span
+                            className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
+                                currentCycle.status === "active"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                            }`}
                         >
-                            {cycleSubmitting ? "Creating..." : "Create Savings Cycle"}
-                        </button>
-                    </form>
-                )}
-            </section>
-            {/* Member management */}
-            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                    <div>
-                        <h3 className="font-bold text-lg text-ink">
-                            Member Management
-                        </h3>
-
-                        <p className="text-sm text-muted mt-1">
-                            View and manage chama membership.
-                        </p>
+                            {currentCycle.status.toUpperCase()}
+                        </span>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setShowFormerMembers(!showFormerMembers)}
-                        className="text-sm font-medium text-orange hover:underline"
-                    >
-                        {showFormerMembers ? "Show active members" : "Show former members"}
-                    </button>
-                </div>
-
-                {membersLoading ? (
-                    <p className="text-sm text-muted">
-                        Loading members...
-                    </p>
-                ) : membersError ? (
-                    <p className="text-sm text-red-600">
-                        {membersError}
-                    </p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead>
-                                <tr className="border-b border-slate-100 text-muted">
-                                    <th className="py-3 pr-4">Member</th>
-                                    <th className="py-3 pr-4">Role</th>
-                                    <th className="py-3 pr-4">Status</th>
-                                    {!showFormerMembers && (
-                                        <th className="py-3 text-right">Action</th>
-                                    )}
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {(showFormerMembers ? formerMembers : activeMembers).map((member) => (
-                                    <tr
-                                        key={getMembershipId(member)}
-                                        className="border-b border-slate-50"
-                                    >
-                                        <td className="py-4 pr-4 font-medium text-ink">
-                                            {member.username}
-                                            {member.is_me && (
-                                                <span className="text-xs text-muted ml-2">
-                                                    (You)
-                                                </span>
-                                            )}
-                                        </td>
-
-                                        <td className="py-4 pr-4 capitalize text-slate-600">
-                                            {member.role}
-                                        </td>
-
-                                        <td className="py-4 pr-4">
-                                            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                                                member.is_active
-                                                    ? "bg-green-50 text-green-700"
-                                                    : "bg-slate-100 text-slate-500"
-                                            }`}>
-                                                {member.is_active ? "Active" : "Former"}
-                                            </span>
-                                        </td>
-
-                                        {!showFormerMembers && (
-                                            <td className="py-4 text-right">
-                                                {member.role !== "chairperson" && (
-                                                    <button
-                                                        type="button"
-                                                        disabled={!!busyAction}
-                                                        onClick={() => handleRemoveMember(getMembershipId(member))}
-                                                        className="text-red-600 hover:text-red-800 disabled:opacity-50"
-                                                        title="Remove member"
-                                                    >
-                                                        <UserMinus size={18} />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {(showFormerMembers ? formerMembers : activeMembers).length === 0 && (
-                            <p className="text-sm text-muted py-6 text-center">
-                                No members to display.
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <p className="text-sm text-gray-500">
+                                Contribution per member
                             </p>
-                        )}
+                            <p className="font-semibold text-gray-800">
+                                KSh {Number(currentCycle.contribution_amount).toLocaleString()}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-sm text-gray-500">Frequency</p>
+                            <p className="font-semibold text-gray-800 capitalize">
+                                {currentCycle.frequency}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-sm text-gray-500">Start date</p>
+                            <p className="font-semibold text-gray-800">
+                                {currentCycle.start_date}
+                            </p>
+                        </div>
                     </div>
-                )}
-            </div>
 
-            {/* Invitation management */}
-            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-6">
-                <div>
-                    <h3 className="font-bold text-lg text-ink">
-                        Invitation Management
-                    </h3>
+                    {/* Cycle actions */}
+                    {currentCycle.status === "draft" && (
+                        <div className="flex flex-wrap gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={handleActivateCycle}
+                                disabled={cycleSubmitting}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                            >
+                                {cycleSubmitting ? "Processing..." : "Activate Cycle"}
+                            </button>
 
-                    <p className="text-sm text-muted mt-1">
-                        Invite people and review proposed chama invitations.
-                    </p>
-                </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowCancelReason(!showCancelReason);
+                                    setCancellationReason("");
+                                    setActionError("");
+                                }}
+                                disabled={cycleSubmitting}
+                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
+                            >
+                                {showCancelReason ? "Close Cancellation" : "Cancel Draft"}
+                            </button>
+                        </div>
+                    )}
 
-                <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(event) => setUsername(event.target.value)}
-                        placeholder="Enter member's username"
-                        className="flex-1 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange"
-                    />
+                    {currentCycle.status === "active" && (
+                        <div className="mt-5">
+                            <p className="text-sm text-gray-600 mb-3">
+                                This cycle is active. Its payout schedule and rounds
+                                are now being managed.
+                            </p>
 
-                    <button
-                        type="submit"
-                        disabled={!!busyAction}
-                        className="flex items-center justify-center gap-2 bg-orange text-white px-5 py-3 rounded-lg text-sm font-semibold hover:bg-orange/90 disabled:opacity-50"
-                    >
-                        <Send size={17} />
-                        Send Invitation
-                    </button>
-                </form>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowCancelReason(!showCancelReason);
+                                    setCancellationReason("");
+                                    setActionError("");
+                                }}
+                                disabled={cycleSubmitting}
+                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
+                            >
+                                {showCancelReason ? "Close Cancellation" : "Cancel Cycle"}
+                            </button>
+                        </div>
+                    )}
 
-                <div>
-                    <h4 className="font-semibold text-ink mb-3">
-                        Open Invitations
-                    </h4>
+                    {/* Cancellation reason form */}
+                    {showCancelReason && (
+                        <form
+                            onSubmit={handleCancelCycle}
+                            className="mt-5 border-t border-gray-200 pt-5 space-y-3"
+                        >
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Reason for cancellation
+                                </label>
 
-                    {invitationsLoading ? (
-                        <p className="text-sm text-muted">
-                            Loading invitations...
-                        </p>
-                    ) : invitationsError ? (
-                        <p className="text-sm text-red-600">
-                            {invitationsError}
-                        </p>
-                    ) : invitations.length === 0 ? (
-                        <p className="text-sm text-muted bg-slate-50 rounded-lg p-4">
-                            There are no open invitations.
-                        </p>
-                    ) : (
-                        <div className="space-y-3">
-                            {invitations.map((invitation) => {
-                                const invitationId = getInvitationId(invitation);
+                                <textarea
+                                    value={cancellationReason}
+                                    onChange={(event) =>
+                                        setCancellationReason(event.target.value)
+                                    }
+                                    required
+                                    rows={3}
+                                    placeholder="Explain why this savings cycle is being cancelled..."
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                />
+                            </div>
 
-                                return (
-                                    <div
-                                        key={invitationId}
-                                        className="border border-slate-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                                    >
-                                        <div>
-                                            <p className="font-medium text-ink">
-                                                {getInvitationUsername(invitation)}
-                                            </p>
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={cycleSubmitting || !cancellationReason.trim()}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {cycleSubmitting ? "Cancelling..." : "Confirm Cancellation"}
+                                </button>
 
-                                            <p className="text-xs text-muted mt-1 capitalize">
-                                                {invitation.status || "Open"}
-                                            </p>
-                                        </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowCancelReason(false);
+                                        setCancellationReason("");
+                                        setActionError("");
+                                    }}
+                                    disabled={cycleSubmitting}
+                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    Go Back
+                                </button>
+                            </div>
+                        </form>
+                    )}
 
-                                        <div className="flex flex-wrap gap-2">
-                                            <button
-                                                type="button"
-                                                disabled={!!busyAction}
-                                                onClick={() => handleReviewInvitation(invitationId, "approve")}
-                                                className="flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 px-3 py-2 rounded-lg disabled:opacity-50"
-                                            >
-                                                <CheckCircle size={15} />
-                                                Approve
-                                            </button>
+                    {/* Payout Schedule */}
+                    {currentCycle.status === "active" && (
+                        <div className="mt-7 border-t border-gray-200 pt-6">
+                            <h3 className="font-semibold text-gray-800 mb-4">
+                                Payout Schedule
+                            </h3>
 
-                                            <button
-                                                type="button"
-                                                disabled={!!busyAction}
-                                                onClick={() => handleReviewInvitation(invitationId, "reject")}
-                                                className="flex items-center gap-1 text-xs font-semibold bg-red-50 text-red-700 px-3 py-2 rounded-lg disabled:opacity-50"
-                                            >
-                                                <XCircle size={15} />
-                                                Reject
-                                            </button>
+                            {cycleDetailsLoading ? (
+                                <p className="text-sm text-gray-500">
+                                    Loading payout schedule...
+                                </p>
+                            ) : cycleDetailsError ? (
+                                <p className="text-sm text-red-600">
+                                    {cycleDetailsError}
+                                </p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead>
+                                            <tr className="border-b border-gray-200 text-gray-500">
+                                                <th className="py-3 pr-4">Round</th>
+                                                <th className="py-3 pr-4">Recipient</th>
+                                                <th className="py-3 pr-4">Due Date</th>
+                                                <th className="py-3 pr-4">Status</th>
+                                            </tr>
+                                        </thead>
 
-                                            <button
-                                                type="button"
-                                                disabled={!!busyAction}
-                                                onClick={() => handleCancelInvitation(invitationId)}
-                                                className="text-xs font-semibold text-slate-600 border border-slate-200 px-3 py-2 rounded-lg disabled:opacity-50"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        <tbody>
+                                            {(cycleDetails?.payout_schedule || []).map((item) => (
+                                                <tr
+                                                    key={item.round_number}
+                                                    className="border-b border-gray-100"
+                                                >
+                                                    <td className="py-3 pr-4 font-medium">
+                                                        Round {item.round_number}
+                                                    </td>
+                                                    <td className="py-3 pr-4">
+                                                        {item.username}
+                                                    </td>
+                                                    <td className="py-3 pr-4">
+                                                        {item.due_date}
+                                                    </td>
+                                                    <td className="py-3 pr-4">
+                                                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 capitalize">
+                                                            {item.round_status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                    {(!cycleDetails?.payout_schedule ||
+                                        cycleDetails.payout_schedule.length === 0) && (
+                                        <p className="text-sm text-gray-500 py-5 text-center">
+                                            No payout schedule is available.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* Treasurer management */}
-            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-5">
-                <div>
-                    <h3 className="font-bold text-lg text-ink">
-                        Treasurer Management
-                    </h3>
-
-                    <p className="text-sm text-muted mt-1">
-                        Appoint or remove the chama Treasurer.
+            ) : (
+                <form onSubmit={handleCreateCycle} className="space-y-5">
+                    <p className="text-sm text-gray-600">
+                        There is no unfinished savings cycle for this chama.
+                        Create a draft to begin setting up the next cycle.
                     </p>
-                </div>
 
-                <div className="bg-slate-50 rounded-lg p-4 flex items-center gap-3">
-                    <ShieldCheck className="text-orange" size={23} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Contribution Amount (KSh)
+                            </label>
+                            <input
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                required
+                                value={contributionAmount}
+                                onChange={(event) =>
+                                    setContributionAmount(event.target.value)
+                                }
+                                placeholder="e.g. 1000"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
 
-                    <div>
-                        <p className="text-xs text-muted">
-                            Current Treasurer
-                        </p>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Contribution Frequency
+                            </label>
+                            <select
+                                value={frequency}
+                                onChange={(event) => setFrequency(event.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
 
-                        <p className="font-semibold text-ink mt-1">
-                            {currentTreasurer?.username || "No Treasurer appointed"}
-                        </p>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Start Date
+                            </label>
+                            <input
+                                type="date"
+                                required
+                                value={startDate}
+                                onChange={(event) => setStartDate(event.target.value)}
+                                min={new Date().toLocaleDateString("en-CA")}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
                     </div>
-                </div>
-
-                <form onSubmit={handleAppointTreasurer} className="space-y-3">
-                    <label className="block text-sm font-medium text-ink">
-                        Appoint a Treasurer
-                    </label>
-
-                    <select
-                        value={selectedTreasurer}
-                        onChange={(event) => setSelectedTreasurer(event.target.value)}
-                        className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm bg-white"
-                    >
-                        <option value="">Select an active member</option>
-
-                        {eligibleMembers.map((member) => (
-                            <option
-                                key={getMembershipId(member)}
-                                value={getMembershipId(member)}
-                            >
-                                {member.username}
-                                {member.role === "treasurer" ? " (Current Treasurer)" : ""}
-                            </option>
-                        ))}
-                    </select>
 
                     <button
                         type="submit"
-                        disabled={!!busyAction || !selectedTreasurer}
-                        className="bg-orange text-white px-5 py-3 rounded-lg text-sm font-semibold disabled:opacity-50"
+                        disabled={cycleSubmitting}
+                        className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
-                        Appoint Treasurer
+                        {cycleSubmitting ? "Creating..." : "Create Savings Cycle"}
                     </button>
                 </form>
+            )}
+        </section>
 
-                {currentTreasurer && (
-                    <button
-                        type="button"
-                        disabled={!!busyAction}
-                        onClick={handleRemoveTreasurer}
-                        className="text-sm text-red-600 font-semibold hover:underline disabled:opacity-50"
-                    >
-                        Remove Current Treasurer
-                    </button>
-                )}
-            </div>
-
-            {/* Leadership transfer */}
-            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-5">
+        {/* Member management */}
+        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <div>
                     <h3 className="font-bold text-lg text-ink">
-                        Leadership Management
+                        Member Management
                     </h3>
-
                     <p className="text-sm text-muted mt-1">
-                        Transfer chairperson responsibilities to another active member.
+                        View and manage chama membership.
                     </p>
                 </div>
 
-                <form onSubmit={handleTransferChair} className="space-y-3">
-                    <label className="block text-sm font-medium text-ink">
-                        Select the new Chairperson
-                    </label>
+                <button
+                    type="button"
+                    onClick={() => setShowFormerMembers(!showFormerMembers)}
+                    className="text-sm font-medium text-orange hover:underline"
+                >
+                    {showFormerMembers ? "Show active members" : "Show former members"}
+                </button>
+            </div>
 
-                    <select
-                        value={selectedChair}
-                        onChange={(event) => setSelectedChair(event.target.value)}
-                        className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm bg-white"
-                    >
-                        <option value="">Select an active member</option>
+            {membersLoading ? (
+                <p className="text-sm text-muted">Loading members...</p>
+            ) : membersError ? (
+                <p className="text-sm text-red-600">{membersError}</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead>
+                            <tr className="border-b border-slate-100 text-muted">
+                                <th className="py-3 pr-4">Member</th>
+                                <th className="py-3 pr-4">Role</th>
+                                <th className="py-3 pr-4">Status</th>
+                                {!showFormerMembers && (
+                                    <th className="py-3 text-right">Action</th>
+                                )}
+                            </tr>
+                        </thead>
 
-                        {transferCandidates.map((member) => (
-                            <option
-                                key={getMembershipId(member)}
-                                value={getMembershipId(member)}
-                            >
-                                {member.username}
-                            </option>
-                        ))}
-                    </select>
+                        <tbody>
+                            {(showFormerMembers ? formerMembers : activeMembers).map((member) => (
+                                <tr
+                                    key={getMembershipId(member)}
+                                    className="border-b border-slate-50"
+                                >
+                                    <td className="py-4 pr-4 font-medium text-ink">
+                                        {member.username}
+                                        {member.is_me && (
+                                            <span className="text-xs text-muted ml-2">
+                                                (You)
+                                            </span>
+                                        )}
+                                    </td>
 
-                    <button
-                        type="submit"
-                        disabled={!!busyAction || !selectedChair}
-                        className="flex items-center gap-2 bg-slate-800 text-white px-5 py-3 rounded-lg text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
-                    >
-                        <ArrowRightLeft size={17} />
-                        Transfer Chairperson Role
-                    </button>
-                </form>
+                                    <td className="py-4 pr-4 capitalize text-slate-600">
+                                        {member.role}
+                                    </td>
 
-                <p className="text-xs text-muted">
-                    Transferring leadership will change your role in this chama.
-                    Make sure the selected member is ready to take responsibility.
+                                    <td className="py-4 pr-4">
+                                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                            member.is_active
+                                                ? "bg-green-50 text-green-700"
+                                                : "bg-slate-100 text-slate-500"
+                                        }`}>
+                                            {member.is_active ? "Active" : "Former"}
+                                        </span>
+                                    </td>
+
+                                    {!showFormerMembers && (
+                                        <td className="py-4 text-right">
+                                            {member.role !== "chairperson" && (
+                                                <button
+                                                    type="button"
+                                                    disabled={!!busyAction}
+                                                    onClick={() => handleRemoveMember(getMembershipId(member))}
+                                                    className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                                                    title="Remove member"
+                                                >
+                                                    <UserMinus size={18} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {(showFormerMembers ? formerMembers : activeMembers).length === 0 && (
+                        <p className="text-sm text-muted py-6 text-center">
+                            No members to display.
+                        </p>
+                    )}
+                </div>
+            )}
+        </div>
+
+        {/* Invitation management */}
+        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-6">
+            <div>
+                <h3 className="font-bold text-lg text-ink">
+                    Invitation Management
+                </h3>
+                <p className="text-sm text-muted mt-1">
+                    Invite people and review proposed chama invitations.
                 </p>
             </div>
 
-        </section>
-    );
+            <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
+                <input
+                    type="text"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    placeholder="Enter member's username"
+                    className="flex-1 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange"
+                />
+
+                <button
+                    type="submit"
+                    disabled={!!busyAction}
+                    className="flex items-center justify-center gap-2 bg-orange text-white px-5 py-3 rounded-lg text-sm font-semibold hover:bg-orange/90 disabled:opacity-50"
+                >
+                    <Send size={17} />
+                    Send Invitation
+                </button>
+            </form>
+
+            <div>
+                <h4 className="font-semibold text-ink mb-3">
+                    Open Invitations
+                </h4>
+
+                {invitationsLoading ? (
+                    <p className="text-sm text-muted">Loading invitations...</p>
+                ) : invitationsError ? (
+                    <p className="text-sm text-red-600">{invitationsError}</p>
+                ) : invitations.length === 0 ? (
+                    <p className="text-sm text-muted bg-slate-50 rounded-lg p-4">
+                        There are no open invitations.
+                    </p>
+                ) : (
+                    <div className="space-y-3">
+                        {invitations.map((invitation) => {
+                            const invitationId = getInvitationId(invitation);
+
+                            return (
+                                <div
+                                    key={invitationId}
+                                    className="border border-slate-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                                >
+                                    <div>
+                                        <p className="font-medium text-ink">
+                                            {getInvitationUsername(invitation)}
+                                        </p>
+                                        <p className="text-xs text-muted mt-1 capitalize">
+                                            {invitation.status || "Open"}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            disabled={!!busyAction}
+                                            onClick={() => handleReviewInvitation(invitationId, "approve")}
+                                            className="flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 px-3 py-2 rounded-lg disabled:opacity-50"
+                                        >
+                                            <CheckCircle size={15} />
+                                            Approve
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={!!busyAction}
+                                            onClick={() => handleReviewInvitation(invitationId, "reject")}
+                                            className="flex items-center gap-1 text-xs font-semibold bg-red-50 text-red-700 px-3 py-2 rounded-lg disabled:opacity-50"
+                                        >
+                                            <XCircle size={15} />
+                                            Reject
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={!!busyAction}
+                                            onClick={() => handleCancelInvitation(invitationId)}
+                                            className="text-xs font-semibold text-slate-600 border border-slate-200 px-3 py-2 rounded-lg disabled:opacity-50"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* Treasurer management */}
+        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-5">
+            <div>
+                <h3 className="font-bold text-lg text-ink">
+                    Treasurer Management
+                </h3>
+                <p className="text-sm text-muted mt-1">
+                    Appoint or remove the chama Treasurer.
+                </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4 flex items-center gap-3">
+                <ShieldCheck className="text-orange" size={23} />
+                <div>
+                    <p className="text-xs text-muted">Current Treasurer</p>
+                    <p className="font-semibold text-ink mt-1">
+                        {currentTreasurer?.username || "No Treasurer appointed"}
+                    </p>
+                </div>
+            </div>
+
+            <form onSubmit={handleAppointTreasurer} className="space-y-3">
+                <label className="block text-sm font-medium text-ink">
+                    Appoint a Treasurer
+                </label>
+
+                <select
+                    value={selectedTreasurer}
+                    onChange={(event) => setSelectedTreasurer(event.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm bg-white"
+                >
+                    <option value="">Select an active member</option>
+                    {eligibleMembers.map((member) => (
+                        <option
+                            key={getMembershipId(member)}
+                            value={getMembershipId(member)}
+                        >
+                            {member.username}
+                            {member.role === "treasurer" ? " (Current Treasurer)" : ""}
+                        </option>
+                    ))}
+                </select>
+
+                <button
+                    type="submit"
+                    disabled={!!busyAction || !selectedTreasurer}
+                    className="bg-orange text-white px-5 py-3 rounded-lg text-sm font-semibold disabled:opacity-50"
+                >
+                    Appoint Treasurer
+                </button>
+            </form>
+
+            {currentTreasurer && (
+                <button
+                    type="button"
+                    disabled={!!busyAction}
+                    onClick={handleRemoveTreasurer}
+                    className="text-sm text-red-600 font-semibold hover:underline disabled:opacity-50"
+                >
+                    Remove Current Treasurer
+                </button>
+            )}
+        </div>
+
+        {/* Leadership transfer */}
+        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-5">
+            <div>
+                <h3 className="font-bold text-lg text-ink">
+                    Leadership Management
+                </h3>
+                <p className="text-sm text-muted mt-1">
+                    Transfer chairperson responsibilities to another active member.
+                </p>
+            </div>
+
+            <form onSubmit={handleTransferChair} className="space-y-3">
+                <label className="block text-sm font-medium text-ink">
+                    Select the new Chairperson
+                </label>
+
+                <select
+                    value={selectedChair}
+                    onChange={(event) => setSelectedChair(event.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm bg-white"
+                >
+                    <option value="">Select an active member</option>
+                    {transferCandidates.map((member) => (
+                        <option
+                            key={getMembershipId(member)}
+                            value={getMembershipId(member)}
+                        >
+                            {member.username}
+                        </option>
+                    ))}
+                </select>
+
+                <button
+                    type="submit"
+                    disabled={!!busyAction || !selectedChair}
+                    className="flex items-center gap-2 bg-slate-800 text-white px-5 py-3 rounded-lg text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
+                >
+                    <ArrowRightLeft size={17} />
+                    Transfer Chairperson Role
+                </button>
+            </form>
+
+            <p className="text-xs text-muted">
+                Transferring leadership will change your role in this chama.
+                Make sure the selected member is ready to take responsibility.
+            </p>
+        </div>
+
+    </section>
+);
+
 }
 
 export default ChairpersonDashboard;

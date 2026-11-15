@@ -16,6 +16,7 @@ import usePendingPayments from "../../hooks/usePendingPayments";
 import TreasurerDashboard from "./TreasurerDashboard";
 import ChairpersonDashboard from "./ChairpersonDashboard";
 import ChamaList from "../chamas/ChamaList";
+import MemberCycleCard from "./MemberCycleCard";
 
 function DashboardOverview() {
     const { user } = useOutletContext();
@@ -57,7 +58,15 @@ function DashboardOverview() {
     const chairpersonChamas = chamas.filter(
         (chama) => chama.my_role === "chairperson"
     );
+    const memberChamas = chamas.filter(
+    (chama) => chama.my_role === "member"
+    );
 
+    const memberCycles = cycles.filter((cycle) =>
+    memberChamas.some(
+        (chama) => chama.chama_id === cycle.chama
+    )
+    );
     const selectedChairpersonChama =
         chairpersonChamas.find(
             (chama) => chama.chama_id === selectedChairpersonChamaId
@@ -280,6 +289,36 @@ function DashboardOverview() {
                 </>
             )}
 
+            {/* Member Savings Cycles */}
+            {!chamasLoading && memberChamas.length > 0 && (
+                <section className="space-y-6 mt-8">
+                    <div>
+                        <h2 className="text-xl font-semibold text-ink">
+                            Member Savings Cycles
+                        </h2>
+
+                        <p className="text-sm text-muted mt-1">
+                            View the active savings cycles and payout schedules
+                            for your chamas.
+                        </p>
+                    </div>
+
+                    {memberCycles.length === 0 ? (
+                        <div className="bg-white border border-slate-100 rounded-xl p-6">
+                            <p className="text-sm text-muted">
+                                None of your chamas currently has an active savings cycle.
+                            </p>
+                        </div>
+                    ) : (
+                        memberCycles.map((cycle) => (
+                            <MemberCycleCard
+                                key={cycle.id}
+                                cycle={cycle}
+                            />
+                        ))
+                    )}
+                </section>
+            )}
             {/* Main dashboard panels */}
             <section className="grid lg:grid-cols-3 gap-6 items-start mt-8">
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
