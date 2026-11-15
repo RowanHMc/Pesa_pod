@@ -33,7 +33,7 @@ function TreasurerDashboard({
         overdueCount,
         loading: overviewLoading,
         error: overviewError,
-    } = useTreasurerOverview(chama?.cycle);
+    } = useTreasurerOverview(cycle);
 
     const {
         payouts,

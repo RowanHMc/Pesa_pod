@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useState } from "react";
 import { getActiveCycles } from "../api/cycles";
 
 function useCycles() {
@@ -6,37 +7,38 @@ function useCycles() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        let isMounted = true;
-        const fetchCycles = async () => {
-            try {
-                const data = await getActiveCycles();
-                const cycleList = Array.isArray(data)
-                    ? data
-                    : data?.results || [];
+    const fetchCycles = useCallback(async () => {
+        setLoading(true);
 
-                if (isMounted) {
-                    setCycles(cycleList);
-                    setError("");
-                }
-            } catch (error) {
-                if (isMounted) {
-                    setError(
-                        error.response?.data?.detail ||
-                        "Unable to load active cycles. Please try again."
-                    );
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            }
-        };
-        fetchCycles();
-        return () => {
-            isMounted = false;
-        };
+        try {
+            const data = await getActiveCycles();
+
+            const cycleList = Array.isArray(data)
+                ? data
+                : data?.results || [];
+
+            setCycles(cycleList);
+            setError("");
+        } catch (error) {
+            setError(
+                error.response?.data?.detail ||
+                "Unable to load active cycles. Please try again."
+            );
+        } finally {
+            setLoading(false);
+        }
     }, []);
-    return { cycles, loading, error };
+
+    useEffect(() => {
+        fetchCycles();
+    }, [fetchCycles]);
+
+    return {
+        cycles,
+        loading,
+        error,
+        refetch: fetchCycles,
+    };
 }
+
 export default useCycles;

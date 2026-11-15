@@ -29,7 +29,7 @@ function DashboardOverview() {
         error: chamasError,
     } = useChamas();
 
-    const { cycles } = useCycles();
+    const { cycles, refetch: refetchCycles } = useCycles();
     const { contributions } = useContributions();
 
     // Treasurer chamas
@@ -274,6 +274,7 @@ function DashboardOverview() {
                         <ChairpersonDashboard
                             chama={selectedChairpersonChama}
                             cycle={selectedChairpersonCycle}
+                            onCycleChanged={refetchCycles}
                         />
                     )}
                 </>
