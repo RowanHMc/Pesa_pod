@@ -2,9 +2,9 @@
 import api from "./axios";
 
 // Fetch all active savings cycles.
-export const getActiveCycles = async () => {
+export const getActiveCycles = async (chamaId=null) => {
     const response = await api.get("transactions/cycles/", {
-        params: { status: "active" },
+        params: { status: "active" , ...(chamaId && { chama: chamaId}),},
     });
 
     return response.data;
