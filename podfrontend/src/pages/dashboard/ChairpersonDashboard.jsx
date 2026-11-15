@@ -1,23 +1,15 @@
 import { useState } from "react";
-import {Users,UserPlus,ShieldCheck,Crown, RefreshCw,UserMinus,CheckCircle, XCircle,Clock, Send,ArrowRightLeft,} from "lucide-react";
+import {ShieldCheck,Crown,UserMinus,CheckCircle, XCircle, Send,ArrowRightLeft,} from "lucide-react";
 import useChama from "../../hooks/useChama";
 import useChamaMembers from "../../hooks/useChamaMembers";
 import useChamaInvitations from "../../hooks/useChamaInvitations";
 import { removeChamaMember, appointTreasurer,removeTreasurer,transferChair,} from "../../api/chamas";
 import { proposeInvitation,reviewInvitation, cancelInvitation,} from "../../api/invitations";
-import useChamaCycles from "../../hooks/useChamaCycles";
-import { createSavingsCycle, activateSavingsCycle, cancelSavingsCycle } from "../../api/cycles";
-import useSavingsCycle from "../../hooks/useSavingsCycle";
 
-function ChairpersonDashboard({ chama, cycle, onCycleChanged }) {
+function ChairpersonDashboard({ chama, cycle}) {
     const chamaId = chama?.chama_id;
-    const {cycles, loading: cyclesLoading, error: cyclesError, refetch: refetchCycles} = useChamaCycles(chamaId);
 
-    const currentCycle = cycles.find(
-    (item) => item.status === "draft" || item.status === "active"
-    );
-
-    const {cycleDetails, loading: cycleDetailsLoading, error: cycleDetailsError, refetch: refetchCycleDetails} = useSavingsCycle(currentCycle?.status === "active" ? currentCycle.id : null);
+ 
     const {chama: chamaDetails } = useChama(chamaId);
     const {members, loading: membersLoading, error: membersError, refetch: refreshMembers,} = useChamaMembers(chamaId, true);   
     const {invitations, loading: invitationsLoading, error: invitationsError, refetch: refreshInvitations,} = useChamaInvitations(chamaId, "open");
@@ -28,13 +20,7 @@ function ChairpersonDashboard({ chama, cycle, onCycleChanged }) {
     const [busyAction, setBusyAction] = useState("");
     const [actionError, setActionError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-    const [contributionAmount, setContributionAmount] = useState("");
-    const [frequency, setFrequency] = useState("weekly");
-    const [startDate, setStartDate] = useState("");
-    const [cycleSubmitting, setCycleSubmitting] = useState(false);
-    const [showCancelReason, setShowCancelReason] = useState(false);
-    const [cancellationReason, setCancellationReason] = useState("");
-
+ 
     const displayChama = chamaDetails || chama;
 
     const activeMembers = members.filter(
@@ -50,9 +36,8 @@ function ChairpersonDashboard({ chama, cycle, onCycleChanged }) {
         (member) =>
             member.role !== "chairperson"
     );
-    const transferCandidates = activeMembers.filter(
-        (member) => member.role !== "chairperson"
-    );
+    const transferCandidates = eligibleMembers;
+    
     const formatError = (error, fallback) => {
         const data = error.response?.data;
 
@@ -186,103 +171,6 @@ function ChairpersonDashboard({ chama, cycle, onCycleChanged }) {
     const getMembershipId = (member) =>
         member.membership_id;
     
-    const handleCreateCycle = async (event) => {
-    event.preventDefault();
-
-    if (!chamaId) return;
-
-    setCycleSubmitting(true);
-    setActionError("");
-    setSuccessMessage("");
-
-    try {
-        await createSavingsCycle({
-            chama: chamaId,
-            contribution_amount: contributionAmount,
-            frequency,
-            start_date: startDate,
-        });
-
-        setContributionAmount("");
-        setFrequency("weekly");
-        setStartDate("");
-
-        setSuccessMessage("Savings cycle draft created successfully.");
-        await refetchCycles();
-    } catch (error) {
-        setActionError(
-            error.response?.data?.detail ||
-            "Unable to create the savings cycle. Please check the details."
-        );
-    } finally {
-        setCycleSubmitting(false);
-    }
-};
-    const handleActivateCycle = async () => {
-        if (!currentCycle) return;
-
-    const confirmed = window.confirm(
-        "Are you sure you want to activate this savings cycle? This will generate the payout schedule and first round."
-    );
-
-    if (!confirmed) return;
-
-    setCycleSubmitting(true);
-    setActionError("");
-    setSuccessMessage("");
-
-    try {
-        await activateSavingsCycle(currentCycle.id);
-
-        setSuccessMessage("Savings cycle activated successfully.");
-        await refetchCycles();
-        if (onCycleChanged) await onCycleChanged();
-    } catch (error) {
-        setActionError(
-            error.response?.data?.detail ||
-            "Unable to activate the savings cycle."
-        );
-    } finally {
-        setCycleSubmitting(false);
-    }
-};
-
-    const handleCancelCycle = async (event) => {
-    event.preventDefault();
-
-    if (!currentCycle) return;
-
-    if (!cancellationReason.trim()) {
-        setActionError("A cancellation reason is required.");
-        return;
-    }
-
-    setCycleSubmitting(true);
-    setActionError("");
-    setSuccessMessage("");
-
-    try {
-        await cancelSavingsCycle(
-            currentCycle.id,
-            cancellationReason.trim()
-        );
-
-        setSuccessMessage("Savings cycle cancelled successfully.");
-        setCancellationReason("");
-        setShowCancelReason(false);
-
-        await refetchCycles();
-
-        if (onCycleChanged) await onCycleChanged();
-    } catch (error) {
-        setActionError(
-            error.response?.data?.detail ||
-            "Unable to cancel the savings cycle."
-        );
-    } finally {
-        setCycleSubmitting(false);
-    }
-};
 
     
 return (
@@ -351,290 +239,6 @@ return (
             </div>
         </div>
 
-        {/* Savings Cycle Management */}
-        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-800">
-                    Savings Cycle Management
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                    Create and manage your chama's savings cycles.
-                </p>
-            </div>
-
-            {cyclesLoading ? (
-                <p className="text-sm text-gray-500">
-                    Loading savings cycles...
-                </p>
-            ) : cyclesError ? (
-                <p className="text-sm text-red-600">{cyclesError}</p>
-            ) : currentCycle ? (
-                <div className="border border-gray-200 rounded-lg p-5">
-                    <div className="mb-4">
-                        <h3 className="font-semibold text-gray-800">
-                            Current Savings Cycle
-                        </h3>
-                        <span
-                            className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
-                                currentCycle.status === "active"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                            }`}
-                        >
-                            {currentCycle.status.toUpperCase()}
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <p className="text-sm text-gray-500">
-                                Contribution per member
-                            </p>
-                            <p className="font-semibold text-gray-800">
-                                KSh {Number(currentCycle.contribution_amount).toLocaleString()}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-gray-500">Frequency</p>
-                            <p className="font-semibold text-gray-800 capitalize">
-                                {currentCycle.frequency}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-gray-500">Start date</p>
-                            <p className="font-semibold text-gray-800">
-                                {currentCycle.start_date}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Cycle actions */}
-                    {currentCycle.status === "draft" && (
-                        <div className="flex flex-wrap gap-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={handleActivateCycle}
-                                disabled={cycleSubmitting}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                            >
-                                {cycleSubmitting ? "Processing..." : "Activate Cycle"}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowCancelReason(!showCancelReason);
-                                    setCancellationReason("");
-                                    setActionError("");
-                                }}
-                                disabled={cycleSubmitting}
-                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
-                            >
-                                {showCancelReason ? "Close Cancellation" : "Cancel Draft"}
-                            </button>
-                        </div>
-                    )}
-
-                    {currentCycle.status === "active" && (
-                        <div className="mt-5">
-                            <p className="text-sm text-gray-600 mb-3">
-                                This cycle is active. Its payout schedule and rounds
-                                are now being managed.
-                            </p>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowCancelReason(!showCancelReason);
-                                    setCancellationReason("");
-                                    setActionError("");
-                                }}
-                                disabled={cycleSubmitting}
-                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
-                            >
-                                {showCancelReason ? "Close Cancellation" : "Cancel Cycle"}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Cancellation reason form */}
-                    {showCancelReason && (
-                        <form
-                            onSubmit={handleCancelCycle}
-                            className="mt-5 border-t border-gray-200 pt-5 space-y-3"
-                        >
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Reason for cancellation
-                                </label>
-
-                                <textarea
-                                    value={cancellationReason}
-                                    onChange={(event) =>
-                                        setCancellationReason(event.target.value)
-                                    }
-                                    required
-                                    rows={3}
-                                    placeholder="Explain why this savings cycle is being cancelled..."
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                                />
-                            </div>
-
-                            <div className="flex flex-wrap gap-3">
-                                <button
-                                    type="submit"
-                                    disabled={cycleSubmitting || !cancellationReason.trim()}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                                >
-                                    {cycleSubmitting ? "Cancelling..." : "Confirm Cancellation"}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowCancelReason(false);
-                                        setCancellationReason("");
-                                        setActionError("");
-                                    }}
-                                    disabled={cycleSubmitting}
-                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                                >
-                                    Go Back
-                                </button>
-                            </div>
-                        </form>
-                    )}
-
-                    {/* Payout Schedule */}
-                    {currentCycle.status === "active" && (
-                        <div className="mt-7 border-t border-gray-200 pt-6">
-                            <h3 className="font-semibold text-gray-800 mb-4">
-                                Payout Schedule
-                            </h3>
-
-                            {cycleDetailsLoading ? (
-                                <p className="text-sm text-gray-500">
-                                    Loading payout schedule...
-                                </p>
-                            ) : cycleDetailsError ? (
-                                <p className="text-sm text-red-600">
-                                    {cycleDetailsError}
-                                </p>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left">
-                                        <thead>
-                                            <tr className="border-b border-gray-200 text-gray-500">
-                                                <th className="py-3 pr-4">Round</th>
-                                                <th className="py-3 pr-4">Recipient</th>
-                                                <th className="py-3 pr-4">Due Date</th>
-                                                <th className="py-3 pr-4">Status</th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {(cycleDetails?.payout_schedule || []).map((item) => (
-                                                <tr
-                                                    key={item.round_number}
-                                                    className="border-b border-gray-100"
-                                                >
-                                                    <td className="py-3 pr-4 font-medium">
-                                                        Round {item.round_number}
-                                                    </td>
-                                                    <td className="py-3 pr-4">
-                                                        {item.username}
-                                                    </td>
-                                                    <td className="py-3 pr-4">
-                                                        {item.due_date}
-                                                    </td>
-                                                    <td className="py-3 pr-4">
-                                                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 capitalize">
-                                                            {item.round_status}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-
-                                    {(!cycleDetails?.payout_schedule ||
-                                        cycleDetails.payout_schedule.length === 0) && (
-                                        <p className="text-sm text-gray-500 py-5 text-center">
-                                            No payout schedule is available.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            ) : (
-                <form onSubmit={handleCreateCycle} className="space-y-5">
-                    <p className="text-sm text-gray-600">
-                        There is no unfinished savings cycle for this chama.
-                        Create a draft to begin setting up the next cycle.
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Contribution Amount (KSh)
-                            </label>
-                            <input
-                                type="number"
-                                min="0.01"
-                                step="0.01"
-                                required
-                                value={contributionAmount}
-                                onChange={(event) =>
-                                    setContributionAmount(event.target.value)
-                                }
-                                placeholder="e.g. 1000"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Contribution Frequency
-                            </label>
-                            <select
-                                value={frequency}
-                                onChange={(event) => setFrequency(event.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                required
-                                value={startDate}
-                                onChange={(event) => setStartDate(event.target.value)}
-                                min={new Date().toLocaleDateString("en-CA")}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={cycleSubmitting}
-                        className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {cycleSubmitting ? "Creating..." : "Create Savings Cycle"}
-                    </button>
-                </form>
-            )}
-        </section>
 
         {/* Member management */}
         <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">

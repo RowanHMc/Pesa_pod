@@ -666,21 +666,23 @@ const handleRecordPayout = async (event) => {
                         Round {round.round_number} — {round.recipient_username}
                     </p>
                 </div>
+        <div>
+             <label className="block text-sm font-medium text-slate-700 mb-2">
+                Payment Method
+            </label>
+            <select
+                value={payoutMethod}
+                onChange={(event) => setPayoutMethod(event.target.value)}
+                required
+                className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm bg-white"            
+            >
+                <option value="">SelectPayment method</option>
+                <option value="mpesa">M-Pesa</option>
+                <option value="bank">Bank Transfer</option>
+                <option value="cash">Cash</option>
 
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Payment Method
-                    </label>
-                    <input
-                        type="text"
-                        value={payoutMethod}
-                        onChange={(event) => setPayoutMethod(event.target.value)}
-                        placeholder="e.g. M-Pesa, Bank Transfer"
-                        className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                </div>
-
+            </select>
+        </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Payment Reference

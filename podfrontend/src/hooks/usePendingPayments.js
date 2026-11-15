@@ -62,6 +62,7 @@ function usePendingPayments(chamaId) {
         loading,
         error,
         refreshPayments,
+        refetch: refreshPayments
     };
 }
 
