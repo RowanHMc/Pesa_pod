@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMyContributions } from "../api/contributions";
 
 function useContributions() {
@@ -7,43 +7,38 @@ function useContributions() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        let isMounted = true;
+    const fetchContributions = useCallback(async () => {
+        setLoading(true);
+        setError("");
 
-        const fetchContributions = async () => {
-            try {
-                const data = await getMyContributions();
+        try {
+            const data = await getMyContributions();
 
-                const contributionList = Array.isArray(data)
-                    ? data
-                    : data?.results || [];
+            const contributionList = Array.isArray(data)
+                ? data
+                : data?.results || [];
 
-                if (isMounted) {
-                    setContributions(contributionList);
-                    setError("");
-                }
-            } catch (error) {
-                if (isMounted) {
-                    setError(
-                        error.response?.data?.detail ||
-                        "Unable to load your contributions. Please try again."
-                    );
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchContributions();
-
-        return () => {
-            isMounted = false;
-        };
+            setContributions(contributionList);
+        } catch (error) {
+            setError(
+                error.response?.data?.detail ||
+                "Unable to load your contributions. Please try again."
+            );
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    return { contributions, loading, error };
+    useEffect(() => {
+        fetchContributions();
+    }, [fetchContributions]);
+
+    return {
+        contributions,
+        loading,
+        error,
+        refetch: fetchContributions,
+    };
 }
 
 export default useContributions;

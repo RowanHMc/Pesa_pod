@@ -1,49 +1,84 @@
 
-import { useEffect, useState } from "react";
-import { getMyPayments } from "../api/payments";
+import { useCallback, useEffect, useState } from "react";
+import {
+    getMyPayments,
+    reportPayment,
+} from "../api/payments";
 
 function usePayments() {
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        let isMounted = true;
+    const fetchPayments = useCallback(async () => {
+        setLoading(true);
+        setError("");
 
-        const fetchPayments = async () => {
-            try {
-                const data = await getMyPayments();
+        try {
+            const data = await getMyPayments();
 
-                const paymentList = Array.isArray(data)
-                    ? data
-                    : data?.results || [];
+            const paymentList = Array.isArray(data)
+                ? data
+                : data?.results || [];
 
-                if (isMounted) {
-                    setPayments(paymentList);
-                    setError("");
-                }
-            } catch (error) {
-                if (isMounted) {
-                    setError(
-                        error.response?.data?.detail ||
-                        "Unable to load your payment reports. Please try again."
-                    );
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchPayments();
-
-        return () => {
-            isMounted = false;
-        };
+            setPayments(paymentList);
+        } catch (error) {
+            setError(
+                error.response?.data?.detail ||
+                "Unable to load your payment reports. Please try again."
+            );
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    return { payments, loading, error };
+    useEffect(() => {
+        fetchPayments();
+    }, [fetchPayments]);
+
+    const submitPaymentReport = async (
+        contributionId,
+        amount,
+        method,
+        reference
+    ) => {
+        setSubmitting(true);
+        setError("");
+
+        try {
+            const result = await reportPayment(
+                contributionId,
+                amount,
+                method,
+                reference
+            );
+
+            await fetchPayments();
+
+            return result;
+        } catch (error) {
+            setError(
+                error.response?.data?.detail ||
+                error.response?.data?.reference?.[0] ||
+                error.response?.data?.contribution?.[0] ||
+                "Unable to report your payment. Please try again."
+            );
+
+            throw error;
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return {
+        payments,
+        loading,
+        submitting,
+        error,
+        refetch: fetchPayments,
+        submitPaymentReport,
+    };
 }
 
 export default usePayments;

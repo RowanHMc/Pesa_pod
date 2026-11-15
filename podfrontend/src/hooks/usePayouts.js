@@ -3,17 +3,21 @@ import { useCallback, useEffect, useState } from "react";
 import {
     getChamaPayouts,
     recordPayout,
+    confirmPayout,
+    rejectPayout,
 } from "../api/payouts";
 
 function usePayouts(chamaId) {
     const [payouts, setPayouts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [responding, setResponding] = useState(false);
     const [error, setError] = useState("");
 
     const refreshPayouts = useCallback(async () => {
         if (!chamaId) {
             setPayouts([]);
+            setLoading(false);
             return;
         }
 
@@ -69,13 +73,51 @@ function usePayouts(chamaId) {
         }
     };
 
+    const respondToPayout = async (
+        action,
+        payoutId,
+        rejectionReason = ""
+    ) => {
+        setResponding(true);
+        setError("");
+
+        try {
+            let result;
+
+            if (action === "confirm") {
+                result = await confirmPayout(payoutId);
+            } else {
+                result = await rejectPayout(
+                    payoutId,
+                    rejectionReason
+                );
+            }
+
+            await refreshPayouts();
+
+            return result;
+        } catch (error) {
+            setError(
+                error.response?.data?.detail ||
+                error.response?.data?.rejection_reason?.[0] ||
+                "Unable to respond to this payout. Please try again."
+            );
+
+            throw error;
+        } finally {
+            setResponding(false);
+        }
+    };
+
     return {
         payouts,
         loading,
         submitting,
+        responding,
         error,
         refreshPayouts,
         createPayout,
+        respondToPayout,
     };
 }
 
