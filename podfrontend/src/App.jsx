@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import {  Route, Routes } from "react-router-dom";
 
 import Home from "./pages/Home";
 // import Dashboard from "./pages/Dashboard";
@@ -6,6 +6,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import DashboardLayout from "./components/layout/DashboardLayout";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import Payments from "./pages/transactions/Payments";
 import Chamas from "./pages/chamas/Chamas";
@@ -22,6 +23,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={< DashboardOverview/>} />
