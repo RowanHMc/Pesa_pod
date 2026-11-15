@@ -11,6 +11,9 @@ import {
     Menu,
     HandCoins,
     CheckCircle2,
+    Mail,
+    Phone,
+    Send,
 } from "lucide-react";
 
 function Home() {
@@ -318,6 +321,213 @@ function Home() {
                 </div>
             </section>
 
+
+{/* Contact */}
+<section id="contact" className="py-20 md:py-24">
+    <div className="max-w-7xl mx-auto px-6">
+
+        <div className="text-center max-w-2xl mx-auto mb-14">
+            <span className="text-orange font-bold uppercase tracking-wider text-sm">
+                Get in Touch
+            </span>
+
+            <h2 className="text-3xl sm:text-4xl font-bold mt-4">
+                We'd love to hear from you
+            </h2>
+
+            <p className="text-muted mt-5 leading-relaxed">
+                Have a question, suggestion, or need assistance?
+                Get in touch with the Pesa Pod team. We're happy to help.
+            </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+
+            {/* Get in Touch Card */}
+            <div className="bg-powder-light rounded-2xl p-8 md:p-10 border border-slate-100">
+
+                <div className="bg-white w-14 h-14 rounded-xl flex items-center justify-center mb-6">
+                    <Mail size={28} className="text-orange" />
+                </div>
+
+                <h3 className="text-2xl font-bold mb-4">
+                    Get in Touch
+                </h3>
+
+                <p className="text-muted leading-relaxed mb-8">
+                    Whether you have questions about using Pesa Pod,
+                    need assistance with your chama, or simply want to
+                    share feedback, feel free to reach out to us.
+                </p>
+
+                <div className="space-y-6">
+
+                    <div className="flex items-start gap-4">
+                        <div className="bg-white p-3 rounded-xl">
+                            <Mail size={21} className="text-orange" />
+                        </div>
+
+                        <div>
+                            <h4 className="font-semibold mb-1">
+                                Email Us
+                            </h4>
+
+                            <a
+                                href="mailto:rowanhadegu@gmail.com"
+                                className="text-orange hover:underline break-all"
+                            >
+                                rowanhadegu@gmail.com
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-4">
+                        <div className="bg-white p-3 rounded-xl">
+                            <Phone size={21} className="text-orange" />
+                        </div>
+
+                        <div>
+                            <h4 className="font-semibold mb-1">
+                                Call Us Now
+                            </h4>
+
+                            <p className="text-muted text-sm">
+                                Add your Pesa Pod contact number here.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+                    {/* Contact Form Card */}
+                    <div className="bg-white rounded-2xl p-8 md:p-10 border border-slate-100 shadow-sm">
+
+                        <div className="bg-orange-light w-14 h-14 rounded-xl flex items-center justify-center mb-6">
+                            <Send size={27} className="text-orange" />
+                        </div>
+
+                        <h3 className="text-2xl font-bold mb-2">
+                            Send Us a Message
+                        </h3>
+
+                        <p className="text-muted text-sm mb-7">
+                            Fill in the form below and send us your enquiry.
+                        </p>
+
+                        <form
+                            onSubmit={(event) => {
+                                event.preventDefault();
+
+                                const formData = new FormData(event.currentTarget);
+                                const name = formData.get("name");
+                                const email = formData.get("email");
+                                const subject = formData.get("subject");
+                                const message = formData.get("message");
+
+                                const body = `
+                                    Name: ${name}
+                                    Email: ${email}
+
+                                    Message:
+                                    ${message}
+                                `;
+
+                                const mailtoLink =
+                                    `mailto:rowanhadegu@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                                window.location.href = mailtoLink;
+                            }}
+                            className="space-y-5"
+                        >
+
+                            <div>
+                                <label
+                                    htmlFor="contact-name"
+                                    className="block text-sm font-semibold mb-2"
+                                >
+                                    Full Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="contact-name"
+                                    name="name"
+                                    placeholder="Enter your full name"
+                                    required
+                                    className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="contact-email"
+                                    className="block text-sm font-semibold mb-2"
+                                >
+                                    Email Address
+                                </label>
+
+                                <input
+                                    type="email"
+                                    id="contact-email"
+                                    name="email"
+                                    placeholder="Enter your email address"
+                                    required
+                                    className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="contact-subject"
+                                    className="block text-sm font-semibold mb-2"
+                                >
+                                    Subject
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="contact-subject"
+                                    name="subject"
+                                    placeholder="What would you like to discuss?"
+                                    required
+                                    className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="contact-message"
+                                    className="block text-sm font-semibold mb-2"
+                                >
+                                    Message
+                                </label>
+
+                                <textarea
+                                    id="contact-message"
+                                    name="message"
+                                    rows="4"
+                                    placeholder="Write your message here..."
+                                    required
+                                    className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none resize-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full inline-flex items-center justify-center gap-2 bg-orange hover:bg-orange/90 text-white font-semibold px-6 py-3.5 rounded-lg transition"
+                            >
+                                Send Message
+                                <Send size={18} />
+                            </button>
+
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
             {/* Call to Action */}
             <section className="py-20 md:py-24">
                 <div className="max-w-5xl mx-auto px-6">
@@ -372,6 +582,9 @@ function Home() {
                                 </a>
                                 <a href="#features" className="hover:text-orange transition">
                                     Features
+                                </a>
+                                <a href="#contact" className="hover:text-orange transition">
+                                    Contact
                                 </a>
                                 <Link to="/login" className="hover:text-orange transition">
                                     Login
