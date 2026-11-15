@@ -1,0 +1,2508 @@
+openapi: 3.0.3
+info:
+  title: Pesa Pod API
+  version: 1.0.0
+  description: "\n    Pesa Pod is a digital chama and ROSCA management platform.\n\n
+    \   The API supports user authentication, chama management,\n    membership, savings
+    cycles, contributions, transactions,\n    payouts, invitations, and notifications.\n\n
+    \   Contributions are made externally. Pesa Pod records\n    reported payments
+    and their confirmation by treasurers.\n    "
+paths:
+  /api/accounts/auth/login/:
+    post:
+      operationId: accounts_auth_login_create
+      description: Base for endpoints anyone can call.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/logout/:
+    post:
+      operationId: accounts_auth_logout_create
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/password-reset/:
+    post:
+      operationId: accounts_auth_password_reset_create
+      description: Base for endpoints anyone can call.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/password-reset/confirm/:
+    post:
+      operationId: accounts_auth_password_reset_confirm_create
+      description: Base for endpoints anyone can call.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/password/change/:
+    post:
+      operationId: accounts_auth_password_change_create
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/register/:
+    post:
+      operationId: accounts_auth_register_create
+      description: Base for endpoints anyone can call.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/resend-verification/:
+    post:
+      operationId: accounts_auth_resend_verification_create
+      description: Base for endpoints anyone can call.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/auth/token/refresh/:
+    post:
+      operationId: accounts_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/accounts/auth/verify-email/:
+    post:
+      operationId: accounts_auth_verify_email_create
+      description: Base for endpoints anyone can call.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/users/me/:
+    get:
+      operationId: accounts_users_me_retrieve
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/chamas/:
+    get:
+      operationId: chamas_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - chamas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedChamaList'
+          description: ''
+    post:
+      operationId: chamas_create
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/:
+    get:
+      operationId: chamas_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+    put:
+      operationId: chamas_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+    patch:
+      operationId: chamas_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedChamaRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/appoint-treasurer/:
+    post:
+      operationId: chamas_appoint_treasurer_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/invitations/:
+    get:
+      operationId: chamas_invitations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+    post:
+      operationId: chamas_invitations_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/invitations/{invitation_id}/cancel/:
+    post:
+      operationId: chamas_invitations_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      - in: path
+        name: invitation_id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/invitations/{invitation_id}/review/:
+    post:
+      operationId: chamas_invitations_review_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      - in: path
+        name: invitation_id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/leave/:
+    post:
+      operationId: chamas_leave_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/members/:
+    get:
+      operationId: chamas_members_retrieve
+      description: Active members; add ?include_left=true to include former members.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/members/{membership_id}/remove/:
+    post:
+      operationId: chamas_members_remove_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      - in: path
+        name: membership_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/remove-treasurer/:
+    post:
+      operationId: chamas_remove_treasurer_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/chamas/{id}/transfer-chair/:
+    post:
+      operationId: chamas_transfer_chair_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - chamas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChamaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chama'
+          description: ''
+  /api/invitations/:
+    get:
+      operationId: invitations_list
+      description: |-
+        Awaiting your answer by default; use ?status=accepted|declined|
+        cancelled|expired|all for history.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedChamaInvitationList'
+          description: ''
+  /api/invitations/{id}/:
+    get:
+      operationId: invitations_retrieve
+      description: Invitations addressed to the logged-in user.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChamaInvitation'
+          description: ''
+  /api/invitations/{id}/respond/:
+    post:
+      operationId: invitations_respond_create
+      description: Invitations addressed to the logged-in user.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChamaInvitation'
+          description: ''
+  /api/notifications/jobs/daily/:
+    post:
+      operationId: notifications_jobs_daily_create
+      description: |-
+        Called once a day by an outside scheduler (a GitHub Actions workflow),
+        because the free hosting tier has no cron. Protected by a shared secret in
+        the X-Jobs-Token header. Safe to call twice: every step is idempotent.
+      tags:
+      - notifications
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/notifications/:
+    get:
+      operationId: notifications_notifications_list
+      description: |-
+        A person's own notification history. Members can mark notifications
+        read but cannot delete them (old ones are cleaned up automatically).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/notifications/notifications/{id}/:
+    get:
+      operationId: notifications_notifications_retrieve
+      description: |-
+        A person's own notification history. Members can mark notifications
+        read but cannot delete them (old ones are cleaned up automatically).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/notifications/{id}/read/:
+    post:
+      operationId: notifications_notifications_read_create
+      description: |-
+        A person's own notification history. Members can mark notifications
+        read but cannot delete them (old ones are cleaned up automatically).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/notifications/preferences/:
+    get:
+      operationId: notifications_notifications_preferences_retrieve
+      description: |-
+        A person's own notification history. Members can mark notifications
+        read but cannot delete them (old ones are cleaned up automatically).
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    patch:
+      operationId: notifications_notifications_preferences_partial_update
+      description: |-
+        A person's own notification history. Members can mark notifications
+        read but cannot delete them (old ones are cleaned up automatically).
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/notifications/read-all/:
+    post:
+      operationId: notifications_notifications_read_all_create
+      description: Mark everything read, or one chama's with ?chama=<id>.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/notifications/unread-count/:
+    get:
+      operationId: notifications_notifications_unread_count_retrieve
+      description: For the badge. Add ?chama=<id> to count one chama only.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/transactions/contributions/:
+    get:
+      operationId: transactions_contributions_list
+      description: The logged-in member's own contributions.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContributionList'
+          description: ''
+  /api/transactions/contributions/{id}/:
+    get:
+      operationId: transactions_contributions_retrieve
+      description: The logged-in member's own contributions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+          description: ''
+  /api/transactions/cycles/:
+    get:
+      operationId: transactions_cycles_list
+      description: Per-action extra permissions, as in the pesapod app.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSavingsCycleList'
+          description: ''
+    post:
+      operationId: transactions_cycles_create
+      description: Per-action extra permissions, as in the pesapod app.
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsCycle'
+          description: ''
+  /api/transactions/cycles/{id}/:
+    get:
+      operationId: transactions_cycles_retrieve
+      description: Per-action extra permissions, as in the pesapod app.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsCycleDetail'
+          description: ''
+    patch:
+      operationId: transactions_cycles_partial_update
+      description: Fix a draft (amount, frequency, start date). PATCH only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSavingsCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSavingsCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSavingsCycleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsCycle'
+          description: ''
+  /api/transactions/cycles/{id}/activate/:
+    post:
+      operationId: transactions_cycles_activate_create
+      description: Per-action extra permissions, as in the pesapod app.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsCycle'
+          description: ''
+  /api/transactions/cycles/{id}/cancel/:
+    post:
+      operationId: transactions_cycles_cancel_create
+      description: Per-action extra permissions, as in the pesapod app.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavingsCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsCycle'
+          description: ''
+  /api/transactions/cycles/{id}/rounds/:
+    get:
+      operationId: transactions_cycles_rounds_retrieve
+      description: All rounds generated so far for this cycle.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsCycle'
+          description: ''
+  /api/transactions/payments/:
+    get:
+      operationId: transactions_payments_list
+      description: |-
+        Members see their own payment reports. The treasurer sees every report
+        in their chama and is the only one who can confirm or reject them.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+    post:
+      operationId: transactions_payments_create
+      description: |-
+        Members see their own payment reports. The treasurer sees every report
+        in their chama and is the only one who can confirm or reject them.
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+  /api/transactions/payments/{id}/:
+    get:
+      operationId: transactions_payments_retrieve
+      description: |-
+        Members see their own payment reports. The treasurer sees every report
+        in their chama and is the only one who can confirm or reject them.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+  /api/transactions/payments/{id}/confirm/:
+    post:
+      operationId: transactions_payments_confirm_create
+      description: |-
+        Members see their own payment reports. The treasurer sees every report
+        in their chama and is the only one who can confirm or reject them.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+  /api/transactions/payments/{id}/reject/:
+    post:
+      operationId: transactions_payments_reject_create
+      description: |-
+        Members see their own payment reports. The treasurer sees every report
+        in their chama and is the only one who can confirm or reject them.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+  /api/transactions/payouts/:
+    get:
+      operationId: transactions_payouts_list
+      description: |-
+        The treasurer records a payout; the recipient confirms or rejects it.
+        Creating one needs the treasurer role, which the service checks.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPayoutList'
+          description: ''
+    post:
+      operationId: transactions_payouts_create
+      description: |-
+        The treasurer records a payout; the recipient confirms or rejects it.
+        Creating one needs the treasurer role, which the service checks.
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+          description: ''
+  /api/transactions/payouts/{id}/:
+    get:
+      operationId: transactions_payouts_retrieve
+      description: |-
+        The treasurer records a payout; the recipient confirms or rejects it.
+        Creating one needs the treasurer role, which the service checks.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+          description: ''
+  /api/transactions/payouts/{id}/confirm/:
+    post:
+      operationId: transactions_payouts_confirm_create
+      description: |-
+        The treasurer records a payout; the recipient confirms or rejects it.
+        Creating one needs the treasurer role, which the service checks.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+          description: ''
+  /api/transactions/payouts/{id}/confirm-on-behalf/:
+    post:
+      operationId: transactions_payouts_confirm_on_behalf_create
+      description: |-
+        The chairperson confirms for a recipient who has not answered after
+        the escalation period (3 days by default). A note is required.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+          description: ''
+  /api/transactions/payouts/{id}/reject/:
+    post:
+      operationId: transactions_payouts_reject_create
+      description: |-
+        The treasurer records a payout; the recipient confirms or rejects it.
+        Creating one needs the treasurer role, which the service checks.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+          description: ''
+  /api/transactions/rounds/:
+    get:
+      operationId: transactions_rounds_list
+      description: Visible to every active member of the chama.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSavingsRoundList'
+          description: ''
+  /api/transactions/rounds/{id}/:
+    get:
+      operationId: transactions_rounds_retrieve
+      description: Visible to every active member of the chama.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsRound'
+          description: ''
+  /api/transactions/rounds/{id}/contributions/:
+    get:
+      operationId: transactions_rounds_contributions_retrieve
+      description: |-
+        Every contribution of this round, for the treasurer.
+        Add ?status=pending to see who still owes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsRound'
+          description: ''
+components:
+  schemas:
+    CategoryEnum:
+      enum:
+      - task
+      - reminder
+      - update
+      type: string
+      description: |-
+        * `task` - Task
+        * `reminder` - Reminder
+        * `update` - Update
+    Chama:
+      type: object
+      properties:
+        chama_id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        created_by_id:
+          type: integer
+          readOnly: true
+        created_by_username:
+          type: string
+          readOnly: true
+        my_role:
+          type: string
+          readOnly: true
+        member_count:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chama_id
+      - created_at
+      - created_by_id
+      - created_by_username
+      - is_active
+      - member_count
+      - my_role
+      - name
+      - updated_at
+    ChamaInvitation:
+      type: object
+      properties:
+        invitation_id:
+          type: string
+          format: uuid
+          readOnly: true
+        chama_id:
+          type: string
+          format: uuid
+          readOnly: true
+        chama_name:
+          type: string
+          readOnly: true
+        invited_user_id:
+          type: integer
+          readOnly: true
+        invited_user_username:
+          type: string
+          readOnly: true
+        invited_by_id:
+          type: integer
+          readOnly: true
+        invited_by_username:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ChamaInvitationStatusEnum'
+          readOnly: true
+        reviewed_by_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        reviewed_by_username:
+          type: string
+          readOnly: true
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chama_id
+      - chama_name
+      - created_at
+      - expires_at
+      - invitation_id
+      - invited_by_id
+      - invited_by_username
+      - invited_user_id
+      - invited_user_username
+      - responded_at
+      - reviewed_at
+      - reviewed_by_id
+      - reviewed_by_username
+      - status
+    ChamaInvitationStatusEnum:
+      enum:
+      - pending_approval
+      - awaiting_acceptance
+      - accepted
+      - rejected
+      - declined
+      - cancelled
+      - expired
+      type: string
+      description: |-
+        * `pending_approval` - Pending Approval
+        * `awaiting_acceptance` - Awaiting Acceptance
+        * `accepted` - Accepted
+        * `rejected` - Rejected
+        * `declined` - Declined
+        * `cancelled` - Cancelled
+        * `expired` - Expired
+    ChamaRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+      required:
+      - name
+    Contribution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        chama_name:
+          type: string
+          readOnly: true
+        round:
+          type: string
+          format: uuid
+          readOnly: true
+        round_number:
+          type: integer
+          readOnly: true
+        due_date:
+          type: string
+          format: date
+          readOnly: true
+        membership:
+          type: integer
+          readOnly: true
+        member_username:
+          type: string
+          readOnly: true
+        amount_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        penalty_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        total_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ContributionStatusEnum'
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount_due
+      - chama_name
+      - created_at
+      - due_date
+      - id
+      - member_username
+      - membership
+      - paid_at
+      - penalty_amount
+      - round
+      - round_number
+      - status
+      - total_due
+    ContributionStatusEnum:
+      enum:
+      - pending
+      - paid
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `paid` - Paid
+    FrequencyEnum:
+      enum:
+      - weekly
+      - monthly
+      type: string
+      description: |-
+        * `weekly` - Weekly
+        * `monthly` - Monthly
+    KindEnum:
+      enum:
+      - payment_reported
+      - payment_rejected
+      - payout_to_record
+      - payout_sent
+      - payout_rejected
+      - payout_stalled
+      - contribution_due_soon
+      - contribution_due_today
+      - contribution_overdue
+      - contribution_last_free_day
+      - penalty_applied
+      - overdue_summary
+      - review_reminder
+      - payout_record_reminder
+      - payout_confirm_reminder
+      - cycle_activated
+      - round_opened
+      - payment_confirmed
+      - round_collected
+      - payout_confirmed
+      - cycle_completed
+      - cycle_cancelled
+      type: string
+      description: |-
+        * `payment_reported` - Payment awaiting review
+        * `payment_rejected` - Payment rejected
+        * `payout_to_record` - Payout to record
+        * `payout_sent` - Payout to confirm
+        * `payout_rejected` - Payout rejected
+        * `payout_stalled` - Payout not confirmed
+        * `contribution_due_soon` - Contribution due soon
+        * `contribution_due_today` - Contribution due today
+        * `contribution_overdue` - Contribution overdue
+        * `contribution_last_free_day` - Last day before penalty
+        * `penalty_applied` - Late penalty added
+        * `overdue_summary` - Overdue contributions
+        * `review_reminder` - Payments waiting for review
+        * `payout_record_reminder` - Payout waiting to be recorded
+        * `payout_confirm_reminder` - Payout waiting for you
+        * `cycle_activated` - Cycle started
+        * `round_opened` - Round opened
+        * `payment_confirmed` - Payment confirmed
+        * `round_collected` - Round collected
+        * `payout_confirmed` - Payout confirmed
+        * `cycle_completed` - Cycle completed
+        * `cycle_cancelled` - Cycle cancelled
+    MethodEnum:
+      enum:
+      - mpesa
+      - bank
+      - cash
+      type: string
+      description: |-
+        * `mpesa` - M-Pesa
+        * `bank` - Bank Transfer
+        * `cash` - Cash
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        chama:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        chama_name:
+          type: string
+          readOnly: true
+        data:
+          readOnly: true
+        is_read:
+          type: boolean
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - category
+      - chama
+      - chama_name
+      - created_at
+      - data
+      - id
+      - is_read
+      - kind
+      - read_at
+      - title
+    PaginatedChamaInvitationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChamaInvitation'
+    PaginatedChamaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chama'
+    PaginatedContributionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contribution'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedPayoutList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payout'
+    PaginatedSavingsCycleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavingsCycle'
+    PaginatedSavingsRoundList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavingsRound'
+    PaginatedTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    PatchedChamaRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+    PatchedSavingsCycleRequest:
+      type: object
+      properties:
+        chama:
+          type: string
+          format: uuid
+        contribution_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+    Payout:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        round:
+          type: string
+          format: uuid
+        round_number:
+          type: integer
+          readOnly: true
+        chama_name:
+          type: string
+          readOnly: true
+        recipient:
+          type: integer
+          readOnly: true
+        recipient_username:
+          type: string
+          readOnly: true
+        recorded_by:
+          type: integer
+          readOnly: true
+        recorded_by_username:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        reference:
+          type: string
+          maxLength: 100
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayoutStatusEnum'
+          readOnly: true
+          default: sent
+        rejection_reason:
+          type: string
+          readOnly: true
+        confirmed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        confirmed_by_username:
+          type: string
+          readOnly: true
+          nullable: true
+        confirmation_note:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - amount
+      - chama_name
+      - confirmation_note
+      - confirmed_by
+      - confirmed_by_username
+      - created_at
+      - id
+      - method
+      - recipient
+      - recipient_username
+      - recorded_by
+      - recorded_by_username
+      - reference
+      - rejection_reason
+      - responded_at
+      - round
+      - round_number
+      - status
+    PayoutRequest:
+      type: object
+      properties:
+        round:
+          type: string
+          format: uuid
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - method
+      - reference
+      - round
+    PayoutStatusEnum:
+      enum:
+      - sent
+      - confirmed
+      - rejected
+      type: string
+      description: |-
+        * `sent` - Sent
+        * `confirmed` - Confirmed
+        * `rejected` - Rejected
+    SavingsCycle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        chama:
+          type: string
+          format: uuid
+        chama_name:
+          type: string
+          readOnly: true
+        contribution_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+        number_of_rounds:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status5efEnum'
+          readOnly: true
+          default: draft
+        current_round:
+          type: string
+          readOnly: true
+        created_by:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cancellation_reason:
+          type: string
+          readOnly: true
+      required:
+      - cancellation_reason
+      - cancelled_at
+      - chama
+      - chama_name
+      - contribution_amount
+      - created_at
+      - created_by
+      - current_round
+      - frequency
+      - id
+      - number_of_rounds
+      - start_date
+      - status
+    SavingsCycleDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        chama:
+          type: string
+          format: uuid
+        chama_name:
+          type: string
+          readOnly: true
+        contribution_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+        number_of_rounds:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status5efEnum'
+          readOnly: true
+          default: draft
+        current_round:
+          type: string
+          readOnly: true
+        created_by:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cancellation_reason:
+          type: string
+          readOnly: true
+        payout_schedule:
+          type: string
+          readOnly: true
+      required:
+      - cancellation_reason
+      - cancelled_at
+      - chama
+      - chama_name
+      - contribution_amount
+      - created_at
+      - created_by
+      - current_round
+      - frequency
+      - id
+      - number_of_rounds
+      - payout_schedule
+      - start_date
+      - status
+    SavingsCycleRequest:
+      type: object
+      properties:
+        chama:
+          type: string
+          format: uuid
+        contribution_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+      required:
+      - chama
+      - contribution_amount
+      - frequency
+      - start_date
+    SavingsRound:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        cycle:
+          type: string
+          format: uuid
+          readOnly: true
+        round_number:
+          type: integer
+          readOnly: true
+        recipient:
+          type: integer
+          readOnly: true
+        recipient_username:
+          type: string
+          readOnly: true
+        due_date:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SavingsRoundStatusEnum'
+          readOnly: true
+        contribution_count:
+          type: string
+          readOnly: true
+        paid_count:
+          type: string
+          readOnly: true
+        payout_status:
+          type: string
+          readOnly: true
+        collected_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - collected_at
+      - completed_at
+      - contribution_count
+      - cycle
+      - due_date
+      - id
+      - paid_count
+      - payout_status
+      - recipient
+      - recipient_username
+      - round_number
+      - status
+    SavingsRoundStatusEnum:
+      enum:
+      - active
+      - collected
+      - completed
+      - cancelled
+      type: string
+      description: |-
+        * `active` - Active
+        * `collected` - Collected
+        * `completed` - Completed
+        * `cancelled` - Cancelled
+    Status5efEnum:
+      enum:
+      - draft
+      - active
+      - completed
+      - cancelled
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - Active
+        * `completed` - Completed
+        * `cancelled` - Cancelled
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        contribution:
+          type: string
+          format: uuid
+        chama_name:
+          type: string
+          readOnly: true
+        round_number:
+          type: integer
+          readOnly: true
+        reported_by:
+          type: integer
+          readOnly: true
+        reported_by_username:
+          type: string
+          readOnly: true
+        reviewed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        reviewed_by_username:
+          type: string
+          readOnly: true
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        reference:
+          type: string
+          maxLength: 100
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TransactionStatusEnum'
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - amount
+      - chama_name
+      - contribution
+      - created_at
+      - id
+      - method
+      - reference
+      - rejection_reason
+      - reported_by
+      - reported_by_username
+      - reviewed_at
+      - reviewed_by
+      - reviewed_by_username
+      - round_number
+      - status
+    TransactionRequest:
+      type: object
+      properties:
+        contribution:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - amount
+      - contribution
+      - method
+      - reference
+    TransactionStatusEnum:
+      enum:
+      - pending
+      - confirmed
+      - rejected
+      - voided
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `confirmed` - Confirmed
+        * `rejected` - Rejected
+        * `voided` - Voided
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        is_email_verified:
+          type: boolean
+          readOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - email
+      - id
+      - is_email_verified
+      - phone_number
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

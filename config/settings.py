@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    "drf_spectacular",
     
     # 'africastalking',
 
@@ -95,6 +96,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 REST_FRAMEWORK = {
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
@@ -136,6 +140,24 @@ REST_FRAMEWORK = {
     },
 
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Pesa Pod API",
+    "DESCRIPTION": """
+    Pesa Pod is a digital chama and ROSCA management platform.
+
+    The API supports user authentication, chama management,
+    membership, savings cycles, contributions, transactions,
+    payouts, invitations, and notifications.
+
+    Contributions are made externally. Pesa Pod records
+    reported payments and their confirmation by treasurers.
+    """,
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+}
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
