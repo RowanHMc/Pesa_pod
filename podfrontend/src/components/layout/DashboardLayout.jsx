@@ -1,17 +1,7 @@
 
 import { useState } from "react";
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
-import {
-    Wallet,
-    LayoutDashboard,
-    CreditCard,
-    Users,
-    Mail,
-    LogOut,
-    Menu,
-    X,
-} from "lucide-react";
-
+import { Wallet, LayoutDashboard, CreditCard, Users, LogOut, Menu, X, Activity} from "lucide-react"; 
 import { useAuth } from "../../context/AuthContext";
 
 function DashboardLayout() {
@@ -23,7 +13,9 @@ function DashboardLayout() {
         { label: "Overview", path: "/dashboard", icon: LayoutDashboard, end: true },
         { label: "Chamas", path: "/dashboard/chamas", icon: Users},
         { label: "Invitations", path: "/dashboard/invitations", icon: CreditCard },
-        { label: "Payments", path: "/dashboard/payments", icon: CreditCard },
+        { label: "Active Cycles", path: "/dashboard/cycles", icon: Activity },
+        { label: "Payments History", path: "/dashboard/payments", icon: CreditCard },
+        
     ];
 
     const currentPage =

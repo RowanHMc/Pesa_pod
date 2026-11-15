@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getMyContributions } from "../api/contributions";
 
-function useContributions() {
+function useContributions(cycleId = null) {
     const [contributions, setContributions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -12,7 +12,7 @@ function useContributions() {
         setError("");
 
         try {
-            const data = await getMyContributions();
+            const data = await getMyContributions(cycleId);
 
             const contributionList = Array.isArray(data)
                 ? data
@@ -27,7 +27,7 @@ function useContributions() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [cycleId]);
 
     useEffect(() => {
         fetchContributions();

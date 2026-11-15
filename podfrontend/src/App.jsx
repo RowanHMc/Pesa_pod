@@ -13,6 +13,8 @@ import Invitations from "./pages/invitations/Invitations";
 import ChamaInvitations from "./pages/chamas/ChamaInvitations";
 import ChamaMembers from "./pages/chamas/ChamaMembers";
 import ChamaDetails from "./pages/chamas/ChamaDetails";
+import ActiveCycles from "./pages/cycles/ActiveCycles"
+
 function App() {
     return (
         <Routes>
@@ -23,12 +25,14 @@ function App() {
 
             <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={< DashboardOverview/>} />
+                <Route path="cycles" element={<ActiveCycles/>} />
                 <Route path="payments" element={<Payments/>} />
                 <Route path="chamas" element={<Chamas/>} />
                 <Route path="invitations" element={<Invitations/>} />
                 <Route path="chamas/:chamaId/invitations" element={<ChamaInvitations/>} />
                 <Route path="chamas/:chamaId/members" element={<ChamaMembers/>} />
                 <Route path="chamas/:chamaId" element={<ChamaDetails/>} />
+
             </Route>
         </Routes>
     );
