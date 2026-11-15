@@ -22,3 +22,23 @@ export const recordPayout = async (roundId, method, reference) => {
 
     return response.data;
 };
+// Recipient confirms receipt of a payout.
+export const confirmPayout = async (payoutId) => {
+    const response = await api.post(
+        `transactions/payouts/${payoutId}/confirm/`
+    );
+
+    return response.data;
+};
+
+// Recipient rejects a payout.
+export const rejectPayout = async (payoutId, rejectionReason) => {
+    const response = await api.post(
+        `transactions/payouts/${payoutId}/reject/`,
+        {
+            rejection_reason: rejectionReason,
+        }
+    );
+
+    return response.data;
+};

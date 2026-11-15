@@ -15,7 +15,17 @@ export const getMyPayments = async () => {
     const response = await api.get("transactions/payments/");
     return response.data;
 };
+// Member reports an externally made contribution payment.
+export const reportPayment = async (contributionId, amount, method, reference) => {
+    const response = await api.post("transactions/payments/", {
+        contribution: contributionId,
+        amount,
+        method,
+        reference,
+    });
 
+    return response.data;
+};
 export const confirmPayment = async (paymentId) => {
     const response = await api.post(
         `transactions/payments/${paymentId}/confirm/`
