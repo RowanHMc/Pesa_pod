@@ -112,6 +112,7 @@ Built as a practical project exploring digital tools for chama and
 rotating savings group management.
 
 ## Presentation Document Link
+- https://1drv.ms/p/c/8861886c4d95b6cd/IQCPm1dRSwSIT6nW9Y9vmDn2AY-2t9w4OpcNCkctLZ0lUwE?e=wiSJN1
 
 
 ## Author
