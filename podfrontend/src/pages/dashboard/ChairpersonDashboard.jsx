@@ -7,11 +7,18 @@ import { removeChamaMember, appointTreasurer,removeTreasurer,transferChair,} fro
 import { proposeInvitation,reviewInvitation, cancelInvitation,} from "../../api/invitations";
 import useChamaCycles from "../../hooks/useChamaCycles";
 import { createSavingsCycle, activateSavingsCycle, cancelSavingsCycle } from "../../api/cycles";
+import useSavingsCycle from "../../hooks/useSavingsCycle";
 
 function ChairpersonDashboard({ chama, cycle }) {
     const chamaId = chama?.chama_id;
     const {cycles, loading: cyclesLoading, error: cyclesError, refetch: refetchCycles} = useChamaCycles(chamaId);
-    const { chama: chamaDetails } = useChama(chamaId);
+
+    const currentCycle = cycles.find(
+    (item) => item.status === "draft" || item.status === "active"
+    );
+
+    const {cycleDetails, loading: cycleDetailsLoading, error: cycleDetailsError, refetch: refetchCycleDetails} = useSavingsCycle(currentCycle?.status === "active" ? currentCycle.id : null);
+    const {chama: chamaDetails } = useChama(chamaId);
     const {members, loading: membersLoading, error: membersError, refetch: refreshMembers,} = useChamaMembers(chamaId, true);   
     const {invitations, loading: invitationsLoading, error: invitationsError, refetch: refreshInvitations,} = useChamaInvitations(chamaId, "open");
     const [username, setUsername] = useState("");
@@ -26,9 +33,7 @@ function ChairpersonDashboard({ chama, cycle }) {
     const [startDate, setStartDate] = useState("");
     const [cycleSubmitting, setCycleSubmitting] = useState(false);
 
-    const currentCycle = cycles.find(
-    (item) => item.status === "draft" || item.status === "active"
-    );
+
     const displayChama = chamaDetails || chama;
 
     const activeMembers = members.filter(
@@ -450,7 +455,71 @@ function ChairpersonDashboard({ chama, cycle }) {
                                 </button>
                             </div>
                         )}
-                    </div>
+                        {currentCycle.status === "active" && (
+    <div className="mt-7 border-t border-gray-200 pt-6">
+        <h3 className="font-semibold text-gray-800 mb-4">
+            Payout Schedule
+        </h3>
+
+        {cycleDetailsLoading ? (
+            <p className="text-sm text-gray-500">
+                Loading payout schedule...
+            </p>
+        ) : cycleDetailsError ? (
+            <p className="text-sm text-red-600">
+                {cycleDetailsError}
+            </p>
+        ) : (
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                    <thead>
+                        <tr className="border-b border-gray-200 text-gray-500">
+                            <th className="py-3 pr-4">Round</th>
+                            <th className="py-3 pr-4">Recipient</th>
+                            <th className="py-3 pr-4">Due Date</th>
+                            <th className="py-3 pr-4">Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {(cycleDetails?.payout_schedule || []).map((item) => (
+                            <tr
+                                key={item.round_number}
+                                className="border-b border-gray-100"
+                            >
+                                <td className="py-3 pr-4 font-medium">
+                                    Round {item.round_number}
+                                </td>
+
+                                <td className="py-3 pr-4">
+                                    {item.username}
+                                </td>
+
+                                <td className="py-3 pr-4">
+                                    {item.due_date}
+                                </td>
+
+                                <td className="py-3 pr-4">
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 capitalize">
+                                        {item.round_status}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                {(!cycleDetails?.payout_schedule ||
+                    cycleDetails.payout_schedule.length === 0) && (
+                    <p className="text-sm text-gray-500 py-5 text-center">
+                        No payout schedule is available.
+                    </p>
+                )}
+            </div>
+        )}
+    </div>
+)}
+                      </div>
                 ) : (
                     <form onSubmit={handleCreateCycle} className="space-y-5">
                         <p className="text-sm text-gray-600">

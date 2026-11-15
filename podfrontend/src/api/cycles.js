@@ -69,3 +69,10 @@ export const cancelSavingsCycle = async (cycleId, reason = "") => {
 
     return response.data;
 };
+ // Fetch detailed information about a savings cycle.
+export const getSavingsCycle = async (cycleId) => {
+    const response = await api.get(
+        `transactions/cycles/${cycleId}/`
+    );
+    return response.data;
+};
