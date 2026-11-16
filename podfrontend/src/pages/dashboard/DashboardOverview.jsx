@@ -97,7 +97,7 @@ function DashboardOverview() {
             icon: HandCoins,
             description: "Your contribution records",
             value: contributions.length,
-            path: "/dashboard/contributions",
+            // path: "/dashboard/contributions",
         },
         {
             title: "Pending Payments",
