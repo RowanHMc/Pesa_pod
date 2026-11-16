@@ -35,9 +35,13 @@ ALLOWED_HOSTS = ['.onrender.com', "localhost", '127.0.0.1']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://pesapod.vercel.app/",
+    "https://pesapod.vercel.app",
     
     ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "https://pesapod.vercel.app",
+]
 
 # Application definition
 
