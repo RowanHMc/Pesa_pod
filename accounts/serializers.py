@@ -167,7 +167,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         attrs.pop("new_password2")
         return attrs
 
-
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -179,8 +180,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_email_verified",
             "date_joined",
         ]
-        read_only_fields = fields
+        read_only_fields = [
+            "id",
+            "email",
+            "is_email_verified",
+            "date_joined",
+        ]
 
 
-class LogoutSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
+    def validate_username(self,value):
+        return value.strip().lower()
+    def validate_phone_number(self, value):
+        try: 
+            return normalize_phone_number(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)

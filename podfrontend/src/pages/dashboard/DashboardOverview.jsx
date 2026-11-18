@@ -30,7 +30,11 @@ function DashboardOverview() {
         error: chamasError,
     } = useChamas();
 
-    const { cycles, refetch: refetchCycles } = useCycles();
+    const {
+        cycles,
+        refetch: refetchCycles,
+    } = useCycles();
+
     const { contributions } = useContributions();
 
     // Treasurer chamas
@@ -58,15 +62,18 @@ function DashboardOverview() {
     const chairpersonChamas = chamas.filter(
         (chama) => chama.my_role === "chairperson"
     );
+
+    // Member chamas
     const memberChamas = chamas.filter(
-    (chama) => chama.my_role === "member"
+        (chama) => chama.my_role === "member"
     );
 
     const memberCycles = cycles.filter((cycle) =>
-    memberChamas.some(
-        (chama) => chama.chama_id === cycle.chama
-    )
+        memberChamas.some(
+            (chama) => chama.chama_id === cycle.chama
+        )
     );
+
     const selectedChairpersonChama =
         chairpersonChamas.find(
             (chama) => chama.chama_id === selectedChairpersonChamaId
@@ -97,7 +104,6 @@ function DashboardOverview() {
             icon: HandCoins,
             description: "Your contribution records",
             value: contributions.length,
-            // path: "/dashboard/contributions",
         },
         {
             title: "Pending Payments",
@@ -129,7 +135,7 @@ function DashboardOverview() {
                     return (
                         <Link
                             key={card.title}
-                            to={card.path}
+                            to={card.path || "/dashboard"}
                             className="block bg-white border border-slate-100 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-powder transition"
                         >
                             <div className="flex items-center justify-between mb-5">
@@ -234,7 +240,7 @@ function DashboardOverview() {
                                 </h2>
 
                                 <p className="text-sm text-muted mt-1">
-                                    Select a chama to manage its members and leadership.
+                                    Select a chama to manage its members, cycles and leadership.
                                 </p>
                             </div>
 
@@ -319,6 +325,7 @@ function DashboardOverview() {
                     )}
                 </section>
             )}
+
             {/* Main dashboard panels */}
             <section className="grid lg:grid-cols-3 gap-6 items-start mt-8">
                 <div className="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-6 shadow-sm">

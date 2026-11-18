@@ -3,7 +3,7 @@ from django.contrib.auth.models import update_last_login
 from django.db import IntegrityError, transaction
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -205,7 +205,7 @@ class LogoutView(APIView):
         return Response({"detail": "Logged out successfully."})
 
 
-class MeView(RetrieveAPIView):
+class MeView(RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
