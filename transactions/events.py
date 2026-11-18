@@ -127,7 +127,32 @@ def penalty_applied(contribution, round_, chama):
 
 
 #  payment
+def mpesa_payment_received(payment, contribution, round_, chama):
+    member = contribution.membership.user
 
+    notify(
+        chama_users(chama.pk, Role.TREASURER),
+        Kind.PAYMENT_CONFIRMED,
+        "M-Pesa contribution received",
+        f"{chama.name}: {member.username}'s contribution of "
+        f"{payment.amount} for round {round_.round_number} "
+        "has been successfully received through M-Pesa.",
+        dedupe_key=f"mpesa_payment_received:{payment.pk}",
+        chama=chama,
+        data=_ids(chama, round_.cycle, round_, contribution, payment),
+    )
+
+    notify(
+        [member],
+        Kind.PAYMENT_CONFIRMED,
+        "Contribution payment successful",
+        f"{chama.name}: your contribution of {payment.amount} "
+        f"for round {round_.round_number} has been received successfully.",
+        dedupe_key=f"mpesa_member_payment_received:{payment.pk}",
+        chama=chama,
+        data=_ids(chama, round_.cycle, round_, contribution, payment),
+    )
+    
 def payment_reported(payment, contribution, round_, chama):
     notify(
         chama_users(chama.pk, Role.TREASURER),

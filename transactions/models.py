@@ -234,6 +234,55 @@ class Transaction(models.Model):
         choices=Status.choices,
         default=Status.PENDING,
     )
+        # M-Pesa payment details
+    phone_number = models.CharField(
+        max_length=16,
+        blank=True,
+        null=True,
+    )
+
+    merchant_request_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+    )
+
+    checkout_request_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+    )
+
+    mpesa_receipt = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+    )
+
+    daraja_result_code = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+    )
+
+    daraja_result_description = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+
+    daraja_callback_data = models.JSONField(
+        blank=True,
+        null=True,
+    )
+
+    completed_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
     rejection_reason = models.CharField(max_length=200, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -280,26 +329,32 @@ class Transaction(models.Model):
         return f"{self.reference} - {self.amount} ({self.status})"
 
 
+
 class Payout(models.Model):
-    """The treasurer's record of paying the collected money to the round's
-    recipient. The recipient confirms receipt, which completes the round."""
+    """A Daraja B2C payout. The recipient confirms receipt after
+    Daraja has successfully completed the transfer."""
 
     class Status(models.TextChoices):
-        SENT = "sent", "Sent"  # recorded by the treasurer, awaiting the recipient
+        PENDING = "pending", "Pending" 
+        SENT = "sent", "Sent"  
         CONFIRMED = "confirmed", "Confirmed"
-        REJECTED = "rejected", "Rejected"  # the recipient says it did not arrive
+        REJECTED = "rejected", "Rejected"  
+        FAILED = "failed", "Failed"  
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     round = models.ForeignKey(
         SavingsRound,
         on_delete=models.PROTECT,
         related_name="payouts",
     )
+
     recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="recorded_payouts",
     )
+
     confirmed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -308,26 +363,82 @@ class Payout(models.Model):
         blank=True,
     )
 
+    # Snapshot of the recipient's account phone number at payout time.
+    recipient_phone = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        )
+
     confirmation_note = models.CharField(
         max_length=200,
         blank=True,
         default="",
     )
-    # Worked out by the system from the confirmed contributions.
+
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(Decimal("0.01"))],
     )
-    method = models.CharField(max_length=10, choices=Transaction.Method.choices)
-    reference = models.CharField(max_length=100)
-    status = models.CharField(
+
+    method = models.CharField(
         max_length=10,
-        choices=Status.choices,
-        default=Status.SENT,
+        choices=Transaction.Method.choices,
     )
-    rejection_reason = models.CharField(max_length=200, blank=True, default="")
+
+    # Internal payout reference, later updated with the M-Pesa receipt.
+    reference = models.CharField(max_length=100)
+
+    # Daraja B2C identifiers.
+    conversation_id = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+    originator_conversation_id = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    # M-Pesa receipt returned after a successful transfer.
+    mpesa_receipt = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    daraja_result_code = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+    )
+    daraja_result_description = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    # Preserve the callback for auditing and troubleshooting.
+    daraja_callback_data = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    rejection_reason = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
+    daraja_completed_at = models.DateTimeField(null=True, blank=True)
     responded_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -339,17 +450,35 @@ class Payout(models.Model):
             ),
             models.UniqueConstraint(
                 fields=["round"],
-                condition=Q(status__in=["sent", "confirmed"]),
+                condition=Q(status__in=["pending", "sent", "confirmed"]),
                 name="one_active_payout_per_round",
             ),
             models.UniqueConstraint(
                 fields=["reference"],
-                condition=Q(status__in=["sent", "confirmed"]),
+                condition=Q(status__in=["pending", "sent", "confirmed"]),
                 name="unique_active_payout_reference",
+            ),
+            models.UniqueConstraint(
+                fields=["conversation_id"],
+                condition=Q(conversation_id__isnull=False),
+                name="unique_payout_conversation_id",
+            ),
+            models.UniqueConstraint(
+                fields=["originator_conversation_id"],
+                condition=Q(originator_conversation_id__isnull=False),
+                name="unique_payout_originator_id",
+            ),
+            models.UniqueConstraint(
+                fields=["mpesa_receipt"],
+                condition=~Q(mpesa_receipt=""),
+                name="unique_payout_mpesa_receipt",
             ),
             models.CheckConstraint(
                 condition=(
-                    Q(status="sent", responded_at__isnull=True)
+                    Q(
+                        status__in=["pending", "sent", "failed"],
+                        responded_at__isnull=True,
+                    )
                     | Q(
                         status__in=["confirmed", "rejected"],
                         responded_at__isnull=False,
@@ -359,11 +488,14 @@ class Payout(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                Q(status="confirmed", confirmed_by__isnull=False)
-                | Q(status__in=["sent", "rejected"], confirmed_by__isnull=True)
-    ),
-    name="payout_confirmation_audit_consistency",
-),
+                    Q(status="confirmed", confirmed_by__isnull=False)
+                    | Q(
+                        status__in=["pending", "sent", "failed", "rejected"],
+                        confirmed_by__isnull=True,
+                    )
+                ),
+                name="payout_confirmation_audit_consistency",
+            ),
         ]
 
     def save(self, *args, **kwargs):

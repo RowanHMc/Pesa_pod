@@ -281,3 +281,22 @@ FRONTEND_URL = config("FRONTEND_URL", default="")
 #    Use a long random value, e.g.:
 #    python -c "import secrets; print(secrets.token_urlsafe(48))"
 JOBS_SECRET_TOKEN = config("JOBS_SECRET_TOKEN", default="")
+
+# Safaricom Daraja API
+DARAJA_CONSUMER_KEY = config("DARAJA_CONSUMER_KEY")
+DARAJA_CONSUMER_SECRET = config("DARAJA_CONSUMER_SECRET")
+
+DARAJA_SHORTCODE = config("DARAJA_SHORTCODE")
+DARAJA_PASSKEY = config("DARAJA_PASSKEY")
+
+DARAJA_ENVIRONMENT = config(
+    "DARAJA_ENVIRONMENT",
+    default="sandbox",
+)
+
+DARAJA_BASE_URL = (
+    "https://sandbox.safaricom.co.ke"
+    if DARAJA_ENVIRONMENT == "sandbox"
+    else "https://api.safaricom.co.ke"
+)
+DARAJA_CALLBACK_URL = config("DARAJA_CALLBACK_URL", default="")
