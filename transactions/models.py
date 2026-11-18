@@ -199,7 +199,7 @@ class Transaction(models.Model):
         PENDING = "pending", "Pending"
         CONFIRMED = "confirmed", "Confirmed"
         REJECTED = "rejected", "Rejected"
-        # Set by the system when a cycle is cancelled while a report is open.
+        FAILED = "failed", "Failed"
         VOIDED = "voided", "Voided"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
