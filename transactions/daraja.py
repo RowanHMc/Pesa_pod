@@ -173,3 +173,42 @@ def initiate_stk_push(
         )
 
     return data
+
+def query_stk_push(checkout_request_id):
+    """Ask Daraja for the current result of an STK Push checkout."""
+    shortcode = settings.DARAJA_SHORTCODE
+    timestamp = timezone.localtime().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(
+        f"{shortcode}{settings.DARAJA_PASSKEY}{timestamp}".encode("utf-8")
+    ).decode("utf-8")
+
+    access_token = get_access_token()
+
+    try:
+        response = requests.post(
+            f"{settings.DARAJA_BASE_URL}/mpesa/stkpushquery/v1/query",
+            json={
+                "BusinessShortCode": shortcode,
+                "Password": password,
+                "Timestamp": timestamp,
+                "CheckoutRequestID": checkout_request_id,
+            },
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=(5, 30),
+        )
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError) as error:
+        raise DarajaAuthenticationError(
+            "Could not retrieve the STK Push status from Daraja."
+        ) from error
+
+    if (
+        not isinstance(data, dict)
+        or data.get("CheckoutRequestID") != checkout_request_id
+    ):
+        raise DarajaAuthenticationError(
+            "Daraja did not return the requested checkout."
+        )
+
+    return data

@@ -316,7 +316,16 @@ class Transaction(models.Model):
                         reviewed_by__isnull=False,
                         reviewed_at__isnull=False,
                     )
+                    | Q(
+                        status__in=["confirmed", "failed"],
+                        method="mpesa",
+                        phone_number__isnull=False,
+                        completed_at__isnull=False,
+                        reviewed_by__isnull=True,
+                        reviewed_at__isnull=True,
+                    )
                 ),
+                
                 name="transaction_review_audit_consistency",
             ),
         ]
