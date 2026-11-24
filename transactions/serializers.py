@@ -351,3 +351,28 @@ class PayoutSerializer(serializers.ModelSerializer):
 
 class ConfirmOnBehalfSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=200, allow_blank=False)
+
+class STKPushSerializer(serializers.Serializer):
+    phone_number = serializers.RegexField(
+        r"^\+?254[17][0-9]{8}\Z",
+        max_length=13,
+    )
+
+    def validate_phone_number(self, value):
+        return value.removeprefix("+")
+
+
+class STKPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = [
+            "id",
+            "contribution",
+            "amount",
+            "status",
+            "checkout_request_id",
+            "daraja_result_code",
+            "daraja_result_description",
+            "completed_at",
+        ]
+        read_only_fields = fields

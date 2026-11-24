@@ -216,6 +216,14 @@ def cancel_cycle(user, cycle_id, reason=""):
                 "A payout is waiting for its recipient to confirm or reject it. "
                 "Wait for that first."
             )
+        if Transaction.objects.filter(
+            contribution__round__cycle=cycle,
+            status=Transaction.Status.PENDING,
+            phone_number__isnull=False,
+        ).exists():
+            raise ValidationError(
+                "Wait for pending M-Pesa payments to settle before cancelling the cycle."
+            )
         open_round_ids = [
             r.pk
             for r in SavingsRound.objects.select_for_update().filter(

@@ -7,6 +7,7 @@ from .views import (
     SavingsCycleViewSet,
     SavingsRoundViewSet,
     TransactionViewSet,
+    DarajaCallbackView
 )
 
 router = DefaultRouter()
@@ -18,5 +19,6 @@ router.register("payouts", PayoutViewSet, basename="payout")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("daraja/stk-callback/", DarajaCallbackView.as_view(), name="daraja-stk-callback",),
 ]
 

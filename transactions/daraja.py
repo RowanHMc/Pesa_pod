@@ -73,106 +73,118 @@ def get_access_token():
 
     return access_token
 
+class DarajaCheckoutRejected(Exception):
+    """Daraja declined to create a checkout"""
+    
+    def initiate_stk_push(
+        amount,
+        phone_number,
+        account_reference,
+        transaction_desc="Chama contribution",
+        callback_url=None,
+    ):
+        """
+        Initiate an M-Pesa STK Push request.
+        This only starts the payment request.
+        It does NOT confirm that payment was completed.
+        """
 
-def initiate_stk_push(
-    amount,
-    phone_number,
-    account_reference,
-    transaction_desc="Chama contribution",
-):
-    """
-    Initiate an M-Pesa STK Push request.
-    This only starts the payment request.
-    It does NOT confirm that payment was completed.
-    """
+        callback_url =callback_url or settings.DARAJA_CALLBACK_URL
+        if not callback_url:
+            raise DarajaAuthenticationError(
+                "Daraja callback URL has not been configured."
+            )
 
-    if not settings.DARAJA_CALLBACK_URL:
-        raise DarajaAuthenticationError(
-            "Daraja callback URL has not been configured."
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Payment amount must be a whole number.") from error
+
+        if amount < 1:
+            raise ValueError("Payment amount must be at least KES 1.")
+
+        # Daraja expects the phone number without the leading plus sign.
+        phone_number = str(phone_number).replace("+", "")
+
+        if not phone_number.startswith("254") or len(phone_number) != 12:
+            raise ValueError(
+                "Phone number must be in the format 2547XXXXXXXX or 2541XXXXXXXX."
+            )
+
+        shortcode = settings.DARAJA_SHORTCODE
+
+        # Generate timestamp in YYYYMMDDHHmmss format.
+        timestamp = timezone.localtime().strftime("%Y%m%d%H%M%S")
+
+        # Generate the STK Push password.
+        password_string = (
+            f"{shortcode}{settings.DARAJA_PASSKEY}{timestamp}"
         )
 
-    try:
-        amount = int(amount)
-    except (TypeError, ValueError) as error:
-        raise ValueError("Payment amount must be a whole number.") from error
+        password = base64.b64encode(
+            password_string.encode("utf-8")
+        ).decode("utf-8")
 
-    if amount < 1:
-        raise ValueError("Payment amount must be at least KES 1.")
-
-    # Daraja expects the phone number without the leading plus sign.
-    phone_number = str(phone_number).replace("+", "")
-
-    if not phone_number.startswith("254") or len(phone_number) != 12:
-        raise ValueError(
-            "Phone number must be in the format 2547XXXXXXXX or 2541XXXXXXXX."
+        url = (
+            f"{settings.DARAJA_BASE_URL}"
+            "/mpesa/stkpush/v1/processrequest"
         )
 
-    shortcode = settings.DARAJA_SHORTCODE
+        payload = {
+            "BusinessShortCode": shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": amount,
+            "PartyA": phone_number,
+            "PartyB": shortcode,
+            "PhoneNumber": phone_number,
+            "CallBackURL": callback_url,
+            "AccountReference": str(account_reference)[:12],
+            "TransactionDesc": str(transaction_desc)[:13],
+        }
 
-    # Generate timestamp in YYYYMMDDHHmmss format.
-    timestamp = timezone.localtime().strftime("%Y%m%d%H%M%S")
+        try:
+            access_token = get_access_token()
 
-    # Generate the STK Push password.
-    password_string = (
-        f"{shortcode}{settings.DARAJA_PASSKEY}{timestamp}"
-    )
+            response = requests.post(
+                url,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                timeout=(5, 30),
+            )
 
-    password = base64.b64encode(
-        password_string.encode("utf-8")
-    ).decode("utf-8")
+            response.raise_for_status()
 
-    url = (
-        f"{settings.DARAJA_BASE_URL}"
-        "/mpesa/stkpush/v1/processrequest"
-    )
+        except requests.RequestException as error:
+            raise DarajaAuthenticationError(
+                f"STK Push request failed: {error}"
+            ) from error
 
-    payload = {
-        "BusinessShortCode": shortcode,
-        "Password": password,
-        "Timestamp": timestamp,
-        "TransactionType": "CustomerPayBillOnline",
-        "Amount": amount,
-        "PartyA": phone_number,
-        "PartyB": shortcode,
-        "PhoneNumber": phone_number,
-        "CallBackURL": settings.DARAJA_CALLBACK_URL,
-        "AccountReference": str(account_reference)[:12],
-        "TransactionDesc": str(transaction_desc)[:13],
-    }
+        try:
+            data = response.json()
+        except ValueError as error:
+            raise DarajaAuthenticationError(
+                "Daraja returned an invalid STK Push response."
+            ) from error
 
-    try:
-        access_token = get_access_token()
+        if not isinstance(data, dict):
+            raise DarajaAuthenticationError("Daraja returned an invalid checkout response.")
 
-        response = requests.post(
-            url,
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            },
-            timeout=(5, 30),
-        )
+        response_code = data.get("ResponseCode")
+        if response_code is not None and str(response_code) != "0":
+            raise DarajaCheckoutRejected("Daraja declined the checkout.")
 
-        response.raise_for_status()
+        if str(response_code) != "0" or not all(
+            isinstance(data.get(key), str) and 0 < len(data[key]) <= 100
+            for key in ("CheckoutRequestID", "MerchantRequestID")
+        ):
+            raise DarajaAuthenticationError("Daraja did not return valid checkout IDs.")
 
-    except requests.RequestException as error:
-        raise DarajaAuthenticationError(
-            f"STK Push request failed: {error}"
-        ) from error
-
-    try:
-        data = response.json()
-    except ValueError as error:
-        raise DarajaAuthenticationError(
-            "Daraja returned an invalid STK Push response."
-        ) from error
-
-    if data.get("ResponseCode") != "0":
-        raise DarajaAuthenticationError(
-            f"Daraja rejected the STK Push request: {data}"
-        )
-
-    return data
+        return data
 
 def query_stk_push(checkout_request_id):
     """Ask Daraja for the current result of an STK Push checkout."""

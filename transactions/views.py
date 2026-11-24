@@ -4,12 +4,13 @@ from django.db.models import Count, OuterRef, Q, Subquery
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from pesapod.models import Membership
 
-from . import services
+from . import services, daraja, stk
 from .models import Contribution, Payout, SavingsCycle, SavingsRound, Transaction
 from .permissions import IsChairperson, IsPayoutRecipient, IsTreasurer
 from .serializers import (
@@ -23,7 +24,10 @@ from .serializers import (
     SavingsRoundSerializer,
     TransactionSerializer,
     ConfirmOnBehalfSerializer,
+    STKPaymentSerializer,
+    STKPushSerializer,
 )
+
 
 UUID_REGEX = "[0-9a-fA-F-]{36}"
 
@@ -290,7 +294,32 @@ class ContributionViewSet(
             queryset = queryset.filter(status=requested)
         return queryset.order_by("-round__due_date", "id")
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="stk-push",
+        serializer_class=STKPushSerializer,
+    )
+    def stk_push(self, request, pk=None):
+        contribution = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        payment = stk.start_checkout(
+            request.user,
+            contribution.pk,
+            serializer.validated_data["phone_number"],
+        )
+        response_status = {
+            Transaction.Status.PENDING: status.HTTP_202_ACCEPTED,
+            Transaction.Status.CONFIRMED: status.HTTP_200_OK,
+            Transaction.Status.FAILED: status.HTTP_502_BAD_GATEWAY,
+        }
+        return Response(
+            STKPaymentSerializer(payment).data,
+            status=response_status[payment.status],
+        )
+    
 class TransactionViewSet(
     RoleScopedMixin,
     mixins.CreateModelMixin,
@@ -349,7 +378,27 @@ class TransactionViewSet(
             data["method"],
             data["reference"],
         )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="stk-status",
+        serializer_class=STKPaymentSerializer,
+    )
+    def stk_status(self, request, pk=None):
+        payment = self.get_object()
+        if payment.phone_number is None:
+            raise ValidationError("This payment has no Daraja checkout.")
 
+        try:
+            payment = stk.refresh_checkout(payment)
+        except daraja.DarajaAuthenticationError:
+            return Response(
+                STKPaymentSerializer(payment).data,
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(STKPaymentSerializer(payment).data)
+    
     def _review(self, request, confirm, reason=""):
         payment = self.get_object()
         payment = services.review_payment(
@@ -470,3 +519,31 @@ class PayoutViewSet(
         payout = self.get_queryset().get(pk=payout.pk)
         return Response(self.get_serializer(payout).data)
 
+class DarajaCallbackView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        body = request.data.get("Body") if isinstance(request.data, dict) else None
+        callback = body.get("stkCallback") if isinstance(body, dict) else None
+        if not isinstance(callback, dict):
+            raise ValidationError("Missing STK callback.")
+
+        checkout_id = callback.get("CheckoutRequestID")
+        merchant_id = callback.get("MerchantRequestID")
+        if not all(
+            isinstance(value, str) and 0 < len(value) <= 100
+            for value in (checkout_id, merchant_id)
+        ):
+            raise ValidationError("Invalid STK request IDs.")
+
+        try:
+            stk.process_callback(
+                request.query_params.get("attempt", ""),
+                checkout_id,
+                merchant_id,
+            )
+        except daraja.DarajaAuthenticationError:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
