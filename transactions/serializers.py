@@ -354,11 +354,16 @@ class ConfirmOnBehalfSerializer(serializers.Serializer):
 
 class STKPushSerializer(serializers.Serializer):
     phone_number = serializers.RegexField(
-        r"^\+?254[17][0-9]{8}\Z",
+        r"^(?:0|\+?254)[17][0-9]{8}\Z",
         max_length=13,
+        error_messages={
+            "invalid": "Enter a Kenyan mobile number, such as 0712345678 or +254712345678."
+        },
     )
 
     def validate_phone_number(self, value):
+        if value.startswith("0"):
+            return "254" + value[1:]
         return value.removeprefix("+")
 
 
