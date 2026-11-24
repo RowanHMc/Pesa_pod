@@ -451,7 +451,10 @@ def review_payment(user, transaction_id, *, confirm, reason=""):
 
     if payment.status != Transaction.Status.PENDING:
         raise ValidationError("This payment report has already been reviewed.")
-
+    
+    if payment.phone_number is not None:
+        raise ValidationError("Daraja determines the outcome of this payment.")
+    
     now = timezone.now()
     payment.reviewed_by = user
     payment.reviewed_at = now
@@ -487,30 +490,27 @@ def review_payment(user, transaction_id, *, confirm, reason=""):
         ]
     )
 
+    mark_contribution_paid(payment, contribution, round_, cycle, chama, now)
+    return payment
+
+
+def mark_contribution_paid(payment, contribution, round_, cycle, chama, now):
+    """Apply a confirmed payment while the caller holds the contribution locks."""
     contribution.status = Contribution.Status.PAID
     contribution.paid_at = now
-
-    contribution.save(
-        update_fields=["status", "paid_at"]
-    )
+    contribution.save(update_fields=["status", "paid_at"])
 
     events.payment_confirmed(payment, round_, chama)
 
-    # Check whether every contribution in this round has been paid.
     if not Contribution.objects.filter(
         round=round_,
         status=Contribution.Status.PENDING,
     ).exists():
-
         round_.status = SavingsRound.Status.COLLECTED
         round_.collected_at = now
-
-        round_.save(
-            update_fields=["status", "collected_at"]
-        )
+        round_.save(update_fields=["status", "collected_at"])
         events.round_collected(round_, cycle, chama)
 
-    return payment
 
 def round_pot(round_):
     """What the recipient is owed: the contributions, not the penalties
