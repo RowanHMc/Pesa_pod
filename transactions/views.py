@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from pesapod.models import Membership
 
-from . import services, daraja, stk
+from . import services, daraja, stk, b2c
 from .models import Contribution, Payout, SavingsCycle, SavingsRound, Transaction
 from .permissions import IsChairperson, IsPayoutRecipient, IsTreasurer
 from .serializers import (
@@ -27,6 +27,7 @@ from .serializers import (
     STKPaymentSerializer,
     STKPushSerializer,
 )
+ 
 
 
 UUID_REGEX = "[0-9a-fA-F-]{36}"
@@ -266,7 +267,20 @@ class SavingsRoundViewSet(
         if requested:
             queryset = queryset.filter(status=requested)
         return self.list_response(queryset, ContributionSerializer)
+    
+    @action(detail=True, methods=["post"], url_path="b2c-payout")
+    def b2c_payout(self, request, pk=None):
+        round_ = self.get_object()
+        payout = b2c.start_payout(request.user, round_.pk)
 
+        if payout.status == Payout.Status.PENDING:
+            response_status = status.HTTP_202_ACCEPTED
+        elif payout.status == Payout.Status.FAILED:
+            response_status = status.HTTP_502_BAD_GATEWAY
+        else:
+            response_status = status.HTTP_200_OK
+
+        return Response(PayoutSerializer(payout).data, status=response_status)
 
 class ContributionViewSet(
     mixins.ListModelMixin,
@@ -546,4 +560,24 @@ class DarajaCallbackView(APIView):
         except daraja.DarajaAuthenticationError:
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
+        return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+class DarajaB2CResultView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        b2c.process_result(
+            request.query_params.get("attempt", ""),
+            request.data,
+        )
+        return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+
+class DarajaB2CTimeoutView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        b2c.process_timeout(request.query_params.get("attempt", ""))
         return Response({"ResultCode": 0, "ResultDesc": "Accepted"})

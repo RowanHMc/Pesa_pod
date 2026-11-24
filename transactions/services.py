@@ -19,7 +19,7 @@ from . import events
 Role = Membership.Role
 
 ACTIVE_REPORT_STATUSES = (Transaction.Status.PENDING, Transaction.Status.CONFIRMED)
-ACTIVE_PAYOUT_STATUSES = (Payout.Status.SENT, Payout.Status.CONFIRMED)
+ACTIVE_PAYOUT_STATUSES = (Payout.Status.PENDING, Payout.Status.SENT, Payout.Status.CONFIRMED)
 
 
 def lock_cycle(cycle_id):
@@ -210,11 +210,12 @@ def cancel_cycle(user, cycle_id, reason=""):
         if not reason:
             raise ValidationError("A reason is required to cancel an active cycle.")
         if Payout.objects.filter(
-            round__cycle=cycle, status=Payout.Status.SENT
+            round__cycle=cycle,
+            status__in=[Payout.Status.PENDING, Payout.Status.SENT],
         ).exists():
             raise ValidationError(
-                "A payout is waiting for its recipient to confirm or reject it. "
-                "Wait for that first."
+                "Wait for the payout to settle or for the recipient to respond "
+                "before cancelling the cycle."
             )
         if Transaction.objects.filter(
             contribution__round__cycle=cycle,
@@ -552,6 +553,7 @@ def record_payout(user, round_id, method, reference):
                 amount=round_pot(round_),
                 method=method,
                 reference=reference,
+                status=Payout.SENT,
             )
             events.payout_sent(payout, round_, chama, user)
             return payout

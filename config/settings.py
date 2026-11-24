@@ -300,3 +300,12 @@ DARAJA_BASE_URL = (
     else "https://api.safaricom.co.ke"
 )
 DARAJA_CALLBACK_URL = config("DARAJA_CALLBACK_URL", default="")
+
+DARAJA_B2C_SHORTCODE = config("DARAJA_B2C_SHORTCODE", default="")
+DARAJA_B2C_INITIATOR_NAME = config("DARAJA_B2C_INITIATOR_NAME", default="")
+DARAJA_B2C_SECURITY_CREDENTIAL = config(
+    "DARAJA_B2C_SECURITY_CREDENTIAL", default=""
+)
+DARAJA_B2C_CALLBACK_BASE_URL = config(
+    "DARAJA_B2C_CALLBACK_BASE_URL", default=""
+)

@@ -76,12 +76,12 @@ def get_access_token():
 class DarajaCheckoutRejected(Exception):
     """Daraja declined to create a checkout"""
     
-    def initiate_stk_push(
-        amount,
-        phone_number,
-        account_reference,
-        transaction_desc="Chama contribution",
-        callback_url=None,
+def initiate_stk_push(
+    amount,
+    phone_number,
+    account_reference,
+    transaction_desc="Chama contribution",
+    callback_url=None,
     ):
         """
         Initiate an M-Pesa STK Push request.
@@ -222,5 +222,73 @@ def query_stk_push(checkout_request_id):
         raise DarajaAuthenticationError(
             "Daraja did not return the requested checkout."
         )
+
+    return data
+
+def initiate_b2c_payout(*, amount, phone_number, result_url, timeout_url):
+    """Submit a sandbox B2C payout and return Daraja's request identifiers."""
+    if settings.DARAJA_ENVIRONMENT != "sandbox":
+        raise ValueError("This B2C integration is configured for sandbox testing.")
+
+    shortcode = settings.DARAJA_B2C_SHORTCODE
+    initiator = settings.DARAJA_B2C_INITIATOR_NAME
+    credential = settings.DARAJA_B2C_SECURITY_CREDENTIAL
+
+    if not all((shortcode, initiator, credential)):
+        raise ValueError("Configure the sandbox B2C credentials first.")
+
+    if amount < 1 or amount != int(amount):
+        raise ValueError("The payout must be at least KES 1 in whole shillings.")
+
+    # The payout service will supply the recipient's normalized account number.
+    phone_number = phone_number.removeprefix("+")
+    if (
+        len(phone_number) != 12
+        or not phone_number.startswith(("2547", "2541"))
+        or not phone_number.isascii()
+        or not phone_number.isdigit()
+    ):
+        raise ValueError("The recipient must have a valid Kenyan mobile number.")
+
+    access_token = get_access_token()
+    payload = {
+        "InitiatorName": initiator,
+        "SecurityCredential": credential,
+        "CommandID": "BusinessPayment",
+        "Amount": int(amount),
+        "PartyA": shortcode,
+        "PartyB": phone_number,
+        "Remarks": "Chama payout",
+        "QueueTimeOutURL": timeout_url,
+        "ResultURL": result_url,
+        "Occasion": "Savings round",
+    }
+
+    try:
+        response = requests.post(
+            "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
+            json=payload,
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=(5, 30),
+        )
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError) as error:
+        raise DarajaAuthenticationError(
+            "Could not establish the outcome of the B2C request."
+        ) from error
+
+    if not isinstance(data, dict):
+        raise DarajaAuthenticationError("Daraja returned an invalid B2C response.")
+
+    response_code = data.get("ResponseCode")
+    if response_code is not None and str(response_code) != "0":
+        raise DarajaCheckoutRejected("Daraja declined the B2C request.")
+
+    if str(response_code) != "0" or not all(
+        isinstance(data.get(key), str) and 0 < len(data[key]) <= 100
+        for key in ("ConversationID", "OriginatorConversationID")
+    ):
+        raise DarajaAuthenticationError("Daraja did not return valid B2C request IDs.")
 
     return data

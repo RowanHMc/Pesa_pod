@@ -7,7 +7,9 @@ from .views import (
     SavingsCycleViewSet,
     SavingsRoundViewSet,
     TransactionViewSet,
-    DarajaCallbackView
+    DarajaCallbackView,
+    DarajaB2CTimeoutView,
+    DarajaB2CResultView
 )
 
 router = DefaultRouter()
@@ -20,5 +22,7 @@ router.register("payouts", PayoutViewSet, basename="payout")
 urlpatterns = [
     path("", include(router.urls)),
     path("daraja/stk-callback/", DarajaCallbackView.as_view(), name="daraja-stk-callback",),
+    path("daraja/b2c-result/", DarajaB2CResultView.as_view(), name="daraja-b2c-result",),
+    path("daraja/b2c-timeout/", DarajaB2CTimeoutView.as_view(), name="daraja-b2c-timeout",),
 ]
 
