@@ -11,12 +11,12 @@ import {
     Menu,
     X,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import useChamas from "../hooks/useChamas";
-import ChamaList from "./chamas/ChamaList";
-import useCycles from "../hooks/useCycles";
-import useContributions from "../hooks/useContributions";
-import usePendingPayments from "../hooks/usePendingPayments";
+import { useAuth } from "../../context/AuthContext";
+import useChamas from "../../hooks/useChamas";
+import ChamaList from "../chamas/ChamaList";
+import useCycles from "../../hooks/useCycles";
+import useContributions from "../../hooks/useContributions";
+import usePendingPayments from "../../hooks/usePendingPayments";
 
 function Dashboard() {
     const { user, loading, logout } = useAuth();

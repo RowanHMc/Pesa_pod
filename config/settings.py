@@ -14,11 +14,7 @@ from pathlib import Path
 from decouple import config
 from datetime import timedelta
 
-# from dotenv import load_dotenv
 
-# load_dotenv()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -31,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG =config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = ['.onrender.com', "localhost", '127.0.0.1']
+ALLOWED_HOSTS = ['.onrender.com', "localhost", '127.0.0.1', 'gravel-sulk-chastise.ngrok-free.dev']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -60,8 +56,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     "drf_spectacular",
-    
-    # 'africastalking',
+ 
 
     'transactions',
     'notifications',
@@ -173,9 +168,7 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
 }
 
-# Aficas Talking
-# AT_USERNAME = config("AT_USERNAME")
-# AT_API_KEY = config("AT_API_KEY")
+
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
@@ -230,22 +223,6 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-# DEFAULT_FROM_EMAIL = f"Pesapod <{config('EMAIL_HOST_USER', default='no-reply@pesapod.example')}>"
-# EMAIL_BACKEND = config(
-#     "EMAIL_BACKEND",
-#     default=(
-#         "django.core.mail.backends.console.EmailBackend"
-#         if DEBUG
-#         else "django.core.mail.backends.smtp.EmailBackend"
-#     ),
-# )
-# EMAIL_HOST = config("EMAIL_HOST", default="")
-# EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-# EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
-# EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-# EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL",

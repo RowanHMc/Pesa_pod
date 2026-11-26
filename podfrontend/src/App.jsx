@@ -1,11 +1,11 @@
 import {  Route, Routes } from "react-router-dom";
 
-import Home from "./pages/Home";
+import Home from "./pages/dashboard/Home";
 // import Dashboard from "./pages/Dashboard";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
-import DashboardLayout from "./components/layout/DashboardLayout";
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import Payments from "./pages/transactions/Payments";
