@@ -1,7 +1,11 @@
 import {  Route, Routes } from "react-router-dom";
 
-import Home from "./pages/dashboard/Home";
+import Home from "./pages/public/Home";
 // import Dashboard from "./pages/Dashboard";
+import PublicLayout from "./pages/public/PublicLayout";
+import About from "./pages/public/About";
+import Features from "./pages/public/Features";
+import Contact from "./pages/public/Contact"
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
@@ -14,12 +18,17 @@ import Invitations from "./pages/invitations/Invitations";
 import ChamaInvitations from "./pages/chamas/ChamaInvitations";
 import ChamaMembers from "./pages/chamas/ChamaMembers";
 import ChamaDetails from "./pages/chamas/ChamaDetails";
-import ActiveCycles from "./pages/cycles/ActiveCycles"
+import ActiveCycles from "./pages/cycles/ActiveCycles";
 
 function App() {
     return (
         <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<PublicLayout />}>
+                <Route index element={<Home />} />
+                <Route path="about" element={<About />} />
+                <Route path="features" element={<Features />} />
+                <Route path="contact" element={<Contact />} />
+            </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
