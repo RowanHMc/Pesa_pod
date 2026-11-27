@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation, Link } from "react-router-dom";
 import { Wallet, LayoutDashboard, CreditCard, Users, LogOut, Menu, X, Activity} from "lucide-react"; 
 import { useAuth } from "../../context/AuthContext";
 
@@ -44,7 +44,7 @@ function DashboardLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="min-h-screen bg-powder-light text-ink flex">
 
             {/* Mobile overlay */}
             {sidebarOpen && (
@@ -56,7 +56,7 @@ function DashboardLayout() {
 
             {/* Sidebar */}
                 <aside
-                    className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-ink text-white flex flex-col transition-transform duration-300 lg:translate-x-0 lg:sticky lg:top-0 lg:shrink-0 ${
+                    className={`fixed inset-y-0 left-0 z-50 w-64 h-screen border-r border-slate-100 bg-white text-ink flex flex-col transition-transform duration-300 lg:translate-x-0 lg:sticky lg:top-0 lg:shrink-0 ${
                         sidebarOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
                 >
@@ -99,7 +99,7 @@ function DashboardLayout() {
                                         `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
                                             isActive
                                                 ? "bg-orange text-white"
-                                                : "text-slate-300 hover:bg-white/10 hover:text-white"
+                                                : "text-muted hover:bg-powder-light hover:text-ink"
                                         }`
                                     }
                                 >
@@ -111,11 +111,16 @@ function DashboardLayout() {
                     </nav>
                 </div>
 
-                <div className="p-4 border-t border-white/10 shrink-0">
+                <div className="p-4 border-t border-slate-100 shrink-0">
+                <Link
+                    to="/"
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted transition hover:bg-powder-light hover:text-ink">
+                    View website
+                </Link>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition"
-                    >
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-mediumtext-muted hover:bg-powder-light hover:text-ink transition">                    
                         <LogOut size={19} />
                         Sign Out
                     </button>

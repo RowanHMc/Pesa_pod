@@ -1,7 +1,9 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Wallet } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function PublicLayout() {
+    const {user, loading} = useAuth();
     return (
         <div className="min-h-screen bg-white text-ink">
             
@@ -27,19 +29,25 @@ export default function PublicLayout() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Link
-                            to="/login"
-                            className="hidden sm:inline-block font-semibold text-ink hover:text-orange transition"
-                        >
-                            Login
-                        </Link>
-
-                        <Link
-                            to="/register"
-                            className="bg-orange hover:bg-orange/90 text-white px-5 py-2.5 rounded-lg font-semibold transition"
-                        >
-                            Get Started
-                        </Link>
+                        {!loading && (
+                            user ? (
+                                <Link to="/dashboard"                                   
+                                    className="rounded-lg bg-orange px-5 py-2.5 font-semibold text-white transition hover:bg-orange/90">                                
+                                    Dashboard
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link to="/login"                                      
+                                        className="hidden font-semibold text-ink transition hover:text-orange sm:inline-block">                                    
+                                        Login
+                                    </Link>
+                                    <Link to="/register"                                       
+                                        className="rounded-lg bg-orange px-5 py-2.5 font-semibold text-white transition hover:bg-orange/90">                                    
+                                        Get Started
+                                    </Link>
+                                </>
+                            )
+                        )}
                     </div>
 
                 </nav>

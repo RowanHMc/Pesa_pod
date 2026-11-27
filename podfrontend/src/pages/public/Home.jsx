@@ -1,28 +1,12 @@
 
 import { Link } from "react-router-dom";
-import {
-    Wallet,
-    Users,
-    CalendarDays,
-    ChartNoAxesCombined,
-    Bell,
-    ShieldCheck,
-    ArrowRight,
-    Menu,
-    HandCoins,
-    CheckCircle2,
-    Mail,
-    Phone,
-    Send,
-} from "lucide-react";
+import { Wallet, Users, CalendarDays, ChartNoAxesCombined, Bell, ArrowRight, CheckCircle2,} from "lucide-react";
 
 function Home() {
    
 
     return (
         <div className="min-h-screen bg-white text-ink">
-
-            {/* Navigation */}
            
 
             {/* Hero */}
@@ -45,26 +29,23 @@ function Home() {
                         </h1>
 
                         <p className="text-muted text-lg leading-relaxed mt-6 max-w-xl">
-                            Pesa Pod makes chama management simpler.
+                            Pesa Pod simplifies chama management.
                             Organize your group, track contributions,
-                            manage savings cycles, and keep everyone
-                            informed in one convenient platform.
+                            manage savings cycles, and keep everyone informed.                      
                         </p>
 
                         <div className="flex flex-wrap gap-4 mt-9">
                             <Link
                                 to="/register"
-                                className="inline-flex items-center gap-2 bg-orange hover:bg-orange/90 text-white font-semibold px-7 py-3.5 rounded-lg transition"
-                            >
+                                className="inline-flex items-center gap-2 bg-orange hover:bg-orange/90 text-white font-semibold px-7 py-3.5 rounded-lg transition">
                                 Create an Account
                                 <ArrowRight size={19} />
                             </Link>
 
                             <Link
                                 to="/login"
-                                className="border border-ink/20 hover:border-orange text-ink font-semibold px-7 py-3.5 rounded-lg transition"
-                            >
-                                Sign In
+                                className="border border-ink/20 hover:border-orange text-ink font-semibold px-7 py-3.5 rounded-lg transition">
+                                    Sign In
                             </Link>
                         </div>
 
@@ -87,7 +68,6 @@ function Home() {
                         <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-orange-light rounded-full opacity-80 blur-2xl" />
 
                         <div className="relative bg-white rounded-3xl shadow-xl border border-slate-100 p-6 sm:p-8">
-
                             <div className="flex items-center justify-between mb-8">
                                 <div>
                                     <p className="text-sm text-muted">
@@ -97,7 +77,6 @@ function Home() {
                                         Chama Overview
                                     </h3>
                                 </div>
-
                                 <div className="bg-powder-light p-3 rounded-xl">
                                     <Users size={25} className="text-ink" />
                                 </div>
@@ -114,8 +93,7 @@ function Home() {
                                     </span>
                                     <ChartNoAxesCombined
                                         size={30}
-                                        className="text-orange"
-                                    />
+                                        className="text-orange"/>                                   
                                 </div>
 
                                 <div className="w-full bg-white rounded-full h-2 mt-5">
@@ -166,13 +144,6 @@ function Home() {
                 </div>
             </section>
 
-            {/* About */}
-
-            {/* Features */}
-
-
-{/* Contact */}
-
             {/* Call to Action */}
             <section className="py-20 md:py-24">
                 <div className="max-w-5xl mx-auto px-6">
@@ -189,8 +160,7 @@ function Home() {
 
                         <Link
                             to="/register"
-                            className="inline-flex items-center gap-2 bg-orange hover:bg-orange/90 text-white font-semibold px-8 py-3.5 rounded-lg mt-8 transition"
-                        >
+                            className="inline-flex items-center gap-2 bg-orange hover:bg-orange/90 text-white font-semibold px-8 py-3.5 rounded-lg mt-8 transition">                        
                             Get Started Today
                             <ArrowRight size={19} />
                         </Link>
