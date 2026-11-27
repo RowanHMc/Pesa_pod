@@ -160,7 +160,7 @@ function ChamaDetails() {
                     <div className="flex items-center gap-3">
                         <Mail className="text-blue-600" size={22} />
                         <h2 className="font-semibold text-gray-900">
-                            Manage Invitations
+                            Invitations
                         </h2>
                     </div>
 

@@ -158,7 +158,10 @@ class ChamaViewSet(
         )
         membership = get_active_membership(request.user, chama.pk)
         if membership is None or membership.role != Role.CHAIRPERSON:
-            queryset = queryset.filter(invited_by=request.user)
+            queryset = queryset.filter(
+                Q(invited_by=request.user)
+                | ~Q(status__in=ChamaInvitation.OPEN_STATUSES)
+            )
 
         allowed = set(Status.values) | {"open"}
         queryset = _filter_by_status(

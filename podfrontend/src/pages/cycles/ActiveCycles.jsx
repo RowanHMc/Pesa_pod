@@ -12,12 +12,12 @@ import TreasurerDashboard from "../dashboard/TreasurerDashboard";
 import ChairpersonDashboard from "../dashboard/ChairpersonDashboard";
 
 function TreasurerCycleSection({ chama, cycle }) {
-    const {
-        payments,
-        loading,
-        error,
-        refetch,
-    } = usePendingPayments(chama.chama_id);
+    const { payments, loading, error, refetch, } = usePendingPayments(chama.chama_id);
+       
+       
+       
+       
+   
 
     return (
         <TreasurerDashboard
@@ -34,9 +34,9 @@ function TreasurerCycleSection({ chama, cycle }) {
 function ActiveCycles() {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const { chamas, loading: chamasLoading, error: chamasError } =
-        useChamas();
-
+    const { chamas, loading: chamasLoading, error: chamasError } = useChamas();
+       
+    const [selectedSection, setSelectedSection] = useState("personal")
     const [selectedChamaId, setSelectedChamaId] = useState(
         searchParams.get("chama") || ""
     );
@@ -63,12 +63,12 @@ function ActiveCycles() {
         (chama) => chama.chama_id === selectedChamaId
     );
 
-    const {
-        cycles,
-        loading: cyclesLoading,
-        error: cyclesError,
-        refetch: refetchCycles,
-    } = useCycles(selectedChamaId || null);
+    const { cycles, loading: cyclesLoading, error: cyclesError, refetch: refetchCycles,} = useCycles(selectedChamaId || null);
+       
+       
+       
+       
+    
 
     const activeCycle = cycles.find(
         (cycle) =>
@@ -82,6 +82,19 @@ function ActiveCycles() {
         setSelectedChamaId(chamaId);
         setSearchParams(chamaId ? { chama: chamaId } : {});
     };
+    const sections = [{ id: "personal", label: "My activity" }];
+
+    if (selectedChama?.my_role === "treasurer" && activeCycle) {
+        sections.push({ id: "treasurer", label: "Treasurer tools" });
+    }
+
+    if (selectedChama?.my_role === "chairperson") {
+        sections.push({ id: "chairperson", label: "Manage cycle" });
+    }
+
+    const currentSection = sections.some(({ id }) => id === selectedSection)
+        ? selectedSection
+        : "personal";
 
     if (chamasLoading) {
         return (
@@ -190,41 +203,56 @@ function ActiveCycles() {
                         </div>
                     ) : (
                         <>
-                            {/* Personal member responsibilities */}
-                            {activeCycle ? (
-                                <MemberCycleCard cycle={activeCycle} />
-                            ) : selectedChama.my_role !== "chairperson" ? (
-                                <div className="bg-white border border-slate-100 rounded-xl p-6 text-center">
-                                    <Wallet
-                                        size={30}
-                                        className="mx-auto text-muted mb-3"
-                                    />
-                                    <h3 className="font-semibold text-ink">
-                                        No Active Savings Cycle
-                                    </h3>
-                                    <p className="text-sm text-muted mt-2">
-                                        There are currently no active savings cycles for this chama.
-                                    </p>
-                                </div>
-                            ) : null}
+                    {sections.length > 1 && (
+                        <div
+                            role="group"
+                            aria-label="Cycle sections"
+                            className="mb-5 flex flex-wrap gap-2"
+                        >
+                            {sections.map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    aria-pressed={currentSection === id}
+                                    onClick={() => setSelectedSection(id)}
+                                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                                        currentSection === id
+                                            ? "bg-orange-light text-ink ring-1 ring-orange"
+                                            : "border border-slate-200 bg-white text-muted hover:bg-powder-light hover:text-ink"
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
-                            {/* Treasurer responsibilities */}
-                            {selectedChama.my_role === "treasurer" &&
-                                activeCycle && (
-                                    <TreasurerCycleSection
-                                        chama={selectedChama}
-                                        cycle={activeCycle}
-                                    />
-                                )}
+                    {currentSection === "personal" && (
+                        activeCycle ? (
+                            <MemberCycleCard key={activeCycle.id} cycle={activeCycle} />
+                        ) : (
+                            <p className="rounded-xl border border-slate-100 bg-white p-6 text-sm text-muted">
+                                No active savings cycle for this chama.
+                            </p>
+                        )
+                    )}
 
-                            {/* Chairperson responsibilities */}
-                            {selectedChama.my_role === "chairperson" && (
-                                <ChairpersonDashboard
-                                    chama={selectedChama}
-                                    cycle={activeCycle}
-                                    onCycleChanged={refetchCycles}
-                                />
-                            )}
+                    {currentSection === "treasurer" && (
+                        <TreasurerCycleSection
+                            key={selectedChama.chama_id}
+                            chama={selectedChama}
+                            cycle={activeCycle}
+                        />
+                    )}
+
+                    {currentSection === "chairperson" && (
+                        <ChairpersonDashboard
+                            key={selectedChama.chama_id}
+                            chama={selectedChama}
+                            cycle={activeCycle}
+                            onCycleChanged={refetchCycles}
+                        />
+                    )}
                         </>
                     )}
                 </>
