@@ -153,6 +153,21 @@ function ChamaDetails() {
                     </p>
                 </Link>
 
+                {chama.my_role === "chairperson" && (
+                    <Link
+                        to={`/dashboard/chamas/${chamaId}/member-management`}
+                        className="rounded-xl border border-slate-200 bg-white p-5 transition hover:border-powder hover:bg-powder-light"
+                    >
+                        <div className="flex items-center gap-3">
+                            <UserRound size={22} className="text-orange" aria-hidden="true" />
+                            <h2 className="font-semibold text-ink">Member Management</h2>
+                        </div>
+                        <p className="mt-2 text-sm text-muted">
+                            Manage members, appoint a treasurer, or transfer the chairperson role.
+                        </p>
+                    </Link>
+                )}
+
                 <Link
                     to={`/dashboard/chamas/${chamaId}/invitations`}
                     className="bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-sm transition"

@@ -19,6 +19,7 @@ import ChamaInvitations from "./pages/chamas/ChamaInvitations";
 import ChamaMembers from "./pages/chamas/ChamaMembers";
 import ChamaDetails from "./pages/chamas/ChamaDetails";
 import ActiveCycles from "./pages/cycles/ActiveCycles";
+import MemberManagement from "./pages/chamas/MemberManagement";
 
 function App() {
     return (
@@ -43,6 +44,7 @@ function App() {
                 <Route path="chamas/:chamaId/invitations" element={<ChamaInvitations/>} />
                 <Route path="chamas/:chamaId/members" element={<ChamaMembers/>} />
                 <Route path="chamas/:chamaId" element={<ChamaDetails/>} />
+                <Route path="chamas/:chamaId/member-management" element={<MemberManagement/>} />
 
             </Route>
         </Routes>
