@@ -184,10 +184,9 @@ function ChamaDetails() {
                     </p>
                 </Link>
 
-                <Link
-                    to={`/dashboard/cycles?chama=${chamaId}`}
-                    className="bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-sm transition"
-                >
+                <Link to={`/dashboard/chamas/${chamaId}/cycles`}                  
+                    className="bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-sm transition">
+                
                     <div className="flex items-center gap-3">
                         <Wallet className="text-blue-600" size={22} />
                         <h2 className="font-semibold text-gray-900">

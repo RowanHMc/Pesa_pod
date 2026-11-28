@@ -13,7 +13,7 @@ function DashboardLayout() {
         { label: "Overview", path: "/dashboard", icon: LayoutDashboard, end: true },
         { label: "Chamas", path: "/dashboard/chamas", icon: Users},
         // { label: "Invitations", path: "/dashboard/invitations", icon: CreditCard },
-        { label: "Active Cycles", path: "/dashboard/cycles", icon: Activity },
+        // { label: "Active Cycles", path: "/dashboard/cycles", icon: Activity },
         { label: "Payments History", path: "/dashboard/payments", icon: CreditCard },
         
     ];

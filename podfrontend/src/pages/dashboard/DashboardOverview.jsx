@@ -1,5 +1,5 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { Activity, ArrowRight, CreditCard, Mail, Users } from "lucide-react";
+import { ArrowRight, CreditCard, Mail, Users } from "lucide-react";
 import useContributions from "../../hooks/useContributions";
 import useInvitations from "../../hooks/useInvitations";
 
@@ -9,12 +9,6 @@ const cards = [
         description: "Choose a chama to view its members and manage the group.",
         to: "/dashboard/chamas",
         icon: Users,
-    },
-    {
-        title: "Active Cycles",
-        description: "View savings rounds, contributions, and payouts.",
-        to: "/dashboard/cycles",
-        icon: Activity,
     },
     {
         title: "Invitations",
@@ -40,7 +34,7 @@ export default function DashboardOverview() {
             count: contributions.filter(({ status }) => status === "pending").length,
             loading: contributionsLoading,
             error: contributionsError,
-            to: "/dashboard/cycles",
+            to: "/dashboard/chamas",
         },
         {
             label: "Invitations awaiting your response",
